@@ -94,10 +94,20 @@ direction and passes anyway. A fixed fixture can *disagree* with the spec, and w
 it does the fixture wins and the spec has a defect.
 
 This is not hypothetical. An earlier round of this suite ran **26/26 green on the
-derived cases while three of them encoded the wrong answer** — `cap-09` had the wrong
-`applicable`, the wrong `overage`, and a missing violation. Nothing in the derived
-set could have caught it. Only the fixed scenarios broke the tie, which is what
-drove the corresponding spec corrections.
+derived cases while three of them were missing a violation the spec had no code
+for**. Nothing in the derived set could have caught it, because the fixtures and the
+implementation came from the same flawed source. Only the fixed scenarios broke the
+tie, which is what drove the spec correction.
+
+**But fixed fixtures have their own failure mode, and this suite hit it too.** A
+fixed expectation is only as good as the conditions under which its ground truth was
+captured. `scenario-03` was transcribed from a system state recorded while a
+precondition now assumed always-true was in fact false — so its `overage` of zero
+described the calculation *not running at all*, not the unlimited-cap rule it
+appeared to demonstrate. It was recorded, reasoned from, and written into the spec
+before the discrepancy surfaced. When a fixed expectation contradicts the spec, rule
+out "the ground truth was captured under different preconditions" before concluding
+the spec is wrong.
 
 The generator runs the reference implementation over every fixed case too, and
 writes any difference into a `divergence_from_spec` block on the expected file. There
@@ -117,7 +127,7 @@ identifies exactly one case; the fixture filename appends a descriptive slug
 | `violations` | compare as a **set of `(code, status)`**; `message` wording is unspecified, so it is informational only |
 | `applicable == false` | assert `allocation == null` **and** `overage == 0` (O3). Says nothing about `violations`, which may be non-empty |
 | `assert_skip` | field names to skip for this case. The fixed scenarios carry `["derived"]` — see open item **O-5** |
-| `reconciliation` | diagnostic block added by the generator — **not** part of the output contract. See **O-2** |
+| `reconciliation` | diagnostic block added by the generator — **not** part of the output contract. Records `sum_of_buckets`, the O1 `target`, `overage_basis` and `total` side by side |
 | `divergence_from_spec` | provenance metadata, never asserted |
 | `raises: true` | the input **must be rejected**. Compare the **set** of `failures` constraint ids; messages are informational, exactly like violation messages |
 | `note` (on a rejection case) | records what the caller silently received before validation existed. Never asserted |
@@ -147,7 +157,7 @@ expected output.
 |---|---|---|
 | `scenario-01-in-policy-no-violations` | CAP | Clean in-policy pass, no split |
 | `scenario-02-class-benchmark-below-cap` | CLASS | Benchmark at the **same rank** as the selection |
-| `scenario-03-add-ons-not-allowed-no-cap` | CAP | Unlimited cap + disallowed add-on → violation with **no allocation** |
+| `scenario-03-add-ons-not-allowed-no-cap` | CAP | `cap == 0` + disallowed add-on → positive overage with **no `CAP` violation** |
 | `scenario-04-not-included-buyer` | CAP | Not-included buyer pays share + fee; buckets exceed `total` |
 | `scenario-05-class-no-benchmark-requires-approval` | CLASS | No benchmark, no cap → approval |
 | `scenario-06-over-cap` | CAP | Policy funds cap, buyer funds excess |
@@ -218,14 +228,15 @@ differ. Getting one of these wrong means the spec was not read carefully.
 
 | # | Element | Where | Pinned by |
 |---|---------|-------|-----------|
-| E-1 | `item_per`, `basis`, `total_per` derivations; included/excluded partition | §3 preamble | every case |
+| E-1 | `item_per`, `overage_basis`, `total_per` derivations; included/excluded partition | §3 preamble | every case |
 | E-2 | CAP branch tree: `cap > 0`, `item_per > cap`, `room`, the `min`/`max` clamps | §3 Mode A | `cap-02`…`cap-06`, `scenario-08` |
 | E-3 | Both `this_overage` formulas — average-based when add-ons allowed, item-based otherwise | §3 Mode A | `cap-06`, `cap-07`, `scenario-10` |
-| E-4 | `cap == 0` is unlimited and contributes **nothing** to overage | Terminology, C4, §3 Mode A | `cap-08`, `cap-09`, `scenario-03` |
+| E-4 | `cap == 0` disables the **cap comparison only**; other policy rules still generate overage, so a disallowed add-on is still owed *and* still overage | Terminology, C4, §3 Mode A | `cap-08` (allowed → nothing owed), `cap-09` / `scenario-03` (disallowed → overage) |
 | E-5 | Not-included buyers pay `item_per + fee`; `excluded_cost` accumulation | §3 Mode A | `cap-10`…`cap-12`, `scenario-04` |
 | E-6 | Finalize **ordering** — not-applicable check, then violations, then `overage += excluded_cost` last | §3 Mode A (marked "order matters") | `cap-11`, `cap-12` |
 | E-7 | Violation gates: `CAP` needs `overage > 0` **and** `cap > 0`; `NOT_INCLUDED` needs `excluded_cost > 0` | §2 table, §3 finalize | `cap-09`, `cap-12` |
-| E-8 | `BUYER_COST_NOT_ALLOWED` — condition, `REQUIRES_APPROVAL` status, mode-independent, emitted even when not applicable | §2 table, §3 preamble | `scenario-03`, `scenario-10`, `cap-07`, `cap-09` |
+| E-8 | `BUYER_COST_NOT_ALLOWED` — condition, `REQUIRES_APPROVAL` status, mode-independent | §2 table, §3 preamble | `scenario-03`, `scenario-10`, `cap-07`, `cap-09` |
+| E-8b | Violations survive a not-applicable return: `allocation == null` with a non-empty `violations` list is valid | §2, O3 | `class-04`, `class-05`, `scenario-05` |
 | E-9 | CLASS `eligible()` — all three clauses (rank, `allowed_classes`, cap) | §3 Mode B | `class-06`, `class-07` |
 | E-9b | `rank()` is caller-supplied configuration, total over the input, order-only, stable, and attaches to class values not options (R1–R5) | §1 Class ranking | `class-02`, `scenario-02`; enforced by `generate_cases.py` |
 | E-10 | CLASS `best` = highest rank, then highest cost | §3 Mode B | `class-02`, `scenario-02` |
@@ -237,6 +248,7 @@ differ. Getting one of these wrong means the spec was not read carefully.
 | E-16 | C1–C7 as stated conditions; O2 non-negativity; O3 shape when not applicable | §1, §2 | all cases |
 | E-16b | Validation **raises**, up front, with **all** failing clauses at once, uniformly across C1–C7 | §1 Validation | the 11 `invalid-*` cases |
 | E-16c | Every `Money` comparison carries ±0.01; `Rate` is strict; counts exact | §1 Money tolerance | `invalid-04`, `invalid-07` |
+| E-18 | O1 reconciles to `total + (n_excluded × buyer_not_included_fee)`; `overage_basis` is a yardstick, never a bucket or a reconciliation target | §2 O1, §3 preamble | all 47; enforced at generation |
 | E-17 | `fee_rate` default 0.04, `Rate` in `[0,1)`, `Money` 2 dp | §1, Types | `cap-15` |
 
 ### Implicit — inferable, but a choice was made
@@ -264,6 +276,8 @@ Kept here with their original identifiers so earlier cross-references still land
 
 | # | Was | Resolution |
 |---|-----|------------|
+| **O-2** | O1 said the buckets sum to `basis`, but `basis = item_cost` when add-ons are disallowed while add-ons still route to `owed.buyer_cost` — so O1 was unsatisfiable, and coding it as an assertion meant failing on valid input. | **The target is `total`.** Settled against the source system's allocator: its `basis` analogue (`per_pax_total_fare`) appears exactly twice in the whole module — assigned once, read once, in `user_overage = max(per_pax_total_fare - fare_cap, 0)`. It never touches a bucket. Buckets are built from the per-buyer base, the cap and the add-on, which partition the total. The variable is now named **`overage_basis`** in the spec, with a note that it selects the yardstick and never the allocation — the old name was the whole cause of the confusion. |
+| **O-3** | The preamble claimed the function "never creates cost," yet the not-included loop adds `buyer_not_included_fee` to `owed.item`. Both could not be true. | Resolved as a necessary part of O-2: an invariant targeting `total` alone still fails on every not-included case, so O1 could not be stated correctly without settling this too. The fee is a **genuine surcharge**, confirmed in the source allocator (`user_flight_cost += per_pax_fare + ticketing_fee`). O1 is now `Σ buckets == total + (n_excluded × buyer_not_included_fee)`, and the purity claim is reworded to name the exception. |
 | **O-7** | §1 listed C1–C7 as conditions and §2 defined only a success shape, with nothing connecting them. Malformed input produced a confident wrong answer: a negative `cap` silently became *unlimited*, a `fee_rate` of `4` charged the buyer 5×, and a mismatched add-on aggregate lost 60 units of the input while every field looked plausible. | Spec §1 gained **Validation**: constraints are enforced, not assumed. Any failing clause **raises**, up front, with **all** failures at once, uniformly across C1–C7. A new `InvalidInput` shape carries `[{constraint, message}]`. §1 also gained **Money tolerance** — every `Money` comparison uses ±0.01, since Money arrives as upstream sums and carries float artifacts; `Rate` stays strict (it is a configured constant with no accumulation path) and counts are exact. Covered by the 11 `invalid-*` cases. |
 | **O-1** | The class rank ordering was never given, so `rank()` could not be written — a hard blocker rather than a judgement call. | Spec §1 gained **Class ranking**, which defines `rank()` as caller-supplied *configuration* (not per-call input) and states its five required properties, R1–R5. The spec still fixes no class names — correctly, since it is domain-neutral — but it now says exactly what a caller must provide and what an implementation may assume. This suite supplies its configuration under `class_ranks`, on the input side as well as the manifest. `generate_cases.py` enforces R1. |
 
@@ -279,9 +293,7 @@ under its original identifier.
 
 | # | Open question | Why the spec cannot settle it | Where it surfaces |
 |---|---|---|---|
-| **O-2** | **Does O1 reconcile against `basis` or `total`?** | O1 says `basis`. But `basis = item_cost` when add-ons are disallowed, while the algorithm still routes add-ons into `owed.buyer_cost` — so the buckets sum to `total`. **O1 is unsatisfiable as written.** An implementer who codes it as a runtime assertion ships something that fails on valid input. | `cap-07`, `cap-09`, `class-10`, `scenario-03`, `scenario-10`. The `reconciliation` block records `sum_of_buckets`, `basis` and `total` side by side so the conflict is visible |
-| **O-3** | **"Never creates cost" vs the not-included fee, which creates cost** | The preamble states the function never creates cost. The not-included loop adds `buyer_not_included_fee` to `owed.item`, so the buckets exceed the input by `n_excluded × fee`. Both cannot be true. | `scenario-04` — buckets total 1215.80 against a `total` of 1180.80, over by exactly the 35.00 fee |
-| **O-4** | **Is the average-based overage intentional?** | `this_overage` reads `total_per = basis / N`, an average across all buyers, not the buyer's own spend. With uneven add-ons a buyer who bought nothing still accrues overage, and `overage != owed.base`. No rationale is given either way, and since `overage` drives user-facing copy this is not cosmetic. | `cap-13` — `overage` 150 vs `owed.base` 200. **No fixed scenario settles it**: every multi-buyer scenario has zero add-ons, so average and actual coincide |
+| **O-4** | **Is the average-based overage intentional?** | `this_overage` reads `total_per = overage_basis / N`, an average across all buyers, not the buyer's own spend. With uneven add-ons a buyer who bought nothing still accrues overage, and `overage != owed.base`. No rationale is given either way, and since `overage` drives user-facing copy this is not cosmetic. | `cap-13` — `overage` 150 vs `owed.base` 200. **No fixed scenario settles it**: every multi-buyer scenario has zero add-ons, so average and actual coincide |
 | **O-5** | **Is `derived` this function's job at all?** | §3 Post-step computes the fee-inclusive totals, but the appendix points at *other* modules for "totals + fee" and "fee back-calculation." In scope, or downstream? | Every fixed scenario carries `assert_skip: ["derived"]` — its ground truth records buckets and overage but no fee-inclusive total. The whole fee-forward path is therefore confirmed by **derived cases only** |
 | **O-8** | **The CLASS `reason` string overstates what happened** | "difference from in-policy class" is emitted even when the benchmark sits at the **same** rank as the selection, so no class change occurred. Cosmetic, but user-visible. | `scenario-02` (ECONOMY benchmarked against ECONOMY), `class-02` |
 
@@ -359,6 +371,10 @@ undefined. O-7 stays open.
   the behaviour is deliberate, tested, or mentioned at all.
 
 Two asymmetries worth holding onto.
+
+O1 is now satisfiable and is **enforced at generation time** — it holds on all 47
+cases, where the old `basis` formulation failed on 6. A change that breaks
+reconciliation cannot be committed as a fixture.
 
 **Fixtures cannot prove correctness.** An implementation that satisfies every
 **derived** case has demonstrated self-consistency with the spec, not correctness.

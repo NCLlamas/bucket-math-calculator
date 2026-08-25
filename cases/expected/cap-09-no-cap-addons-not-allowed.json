@@ -1,13 +1,39 @@
 {
-  "applicable": false,
-  "allocation": null,
-  "derived": null,
-  "overage": 0.0,
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 800.0,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 0.0,
+      "buyer_cost": 200.0
+    },
+    "covered_buyer_count": 2,
+    "fee_rate": 0.04
+  },
+  "derived": {
+    "covered": {
+      "total": 800.0
+    },
+    "owed": {
+      "base": 200.0,
+      "fee": 8.0,
+      "total": 208.0
+    }
+  },
+  "overage": 200.0,
   "violations": [
     {
       "code": "BUYER_COST_NOT_ALLOWED",
       "status": "REQUIRES_APPROVAL",
       "message": "200.00 add-on cost not allowed by policy"
     }
-  ]
+  ],
+  "reconciliation": {
+    "sum_of_buckets": 1000.0,
+    "target": 1000.0,
+    "overage_basis": 800.0,
+    "total": 1000.0
+  }
 }

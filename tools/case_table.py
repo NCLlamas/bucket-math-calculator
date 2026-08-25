@@ -119,13 +119,14 @@ CASES = [
     ),
     dict(
         id="cap-09-no-cap-addons-not-allowed",
-        desc="cap == 0 with add-ons disallowed. The buyer owes the add-on, but cap 0 "
-             "is unlimited so nothing is over it: overage stays 0 and there is no "
-             "split. A BUYER_COST_NOT_ALLOWED violation is still emitted -- the case "
-             "for `allocation == null` alongside a NON-empty violations list.",
-        provenance="spec:3.A cap == 0 branch; standing violation; unlimited-cap rule",
-        tags=["cap", "no-cap", "sentinel", "not-applicable",
-              "violation-without-allocation", "add-ons", "not-allowed", "edge"],
+        desc="cap == 0 with add-ons disallowed, two buyers. The sentinel disables the "
+             "CAP comparison, not overage generation: the disallowed add-on is owed "
+             "and is overage. Applicable, positive overage, and NO CAP violation -- "
+             "that one is gated on `cap > 0`. Any consumer assuming "
+             "`overage > 0 implies a CAP violation` breaks here.",
+        provenance="spec:3.A cap == 0 branch; violation gate; standing violation",
+        tags=["cap", "no-cap", "sentinel", "overage-without-cap-violation",
+              "add-ons", "not-allowed", "edge"],
         input=cap_input(1000, 800, 200, [buyer("b1", 100), buyer("b2", 100)], cap=0, allowed=False),
     ),
     dict(

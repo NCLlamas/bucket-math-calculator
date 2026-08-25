@@ -7,8 +7,9 @@ priced **item** plus a **policy** and splits the cost into two funding **buckets
 - **`owed`** — the portion the individual **buyer** must pay (the excess), plus a
   fee on that portion.
 
-It is a **pure allocation function**: it never creates cost. The two buckets must
-always reconcile back to the input. No I/O, no persistence, no external calls.
+It is a **pure allocation function**: no I/O, no persistence, no external calls. The
+two buckets reconcile back to the input, with one deliberate exception — the
+per-not-included-buyer fee is a genuine surcharge and is added on top. See O1.
 
 ---
 
@@ -21,7 +22,7 @@ always reconcile back to the input. No I/O, no persistence, no external calls.
 | **buyer_cost** | A per-**buyer** discretionary add-on cost. Named for the fact each buyer selects their own. This is a *cost dimension*, not a payer. |
 | **total** | `item_cost` + all add-ons (buyer_costs + any other ancillary). `total ≥ item_cost`, `total ≥ Σ buyer_cost`. |
 | **buyer** | One individual in the group. Every buyer is either *included* or *not included* by the policy. |
-| **cap** | Per-buyer spend ceiling the policy funds. `0` is the sentinel for "no cap" — the cap is treated as **infinite** (any spend is allowed / in-policy). |
+| **cap** | Per-buyer spend ceiling the policy funds. `0` is the sentinel for "no cap": the cap rule is **disabled**, so no spend is measured against a limit and the `CAP` violation cannot fire. It does **not** disable the policy's other rules. |
 | **class** | A discrete tier of the item (e.g. a quality/service level). Classes are **ranked**; higher rank = higher tier. The set and its order are caller-supplied, not fixed by this spec. |
 | **covered** | Output bucket: money the policy funds. |
 | **owed** | Output bucket: money the buyer funds. |
@@ -77,7 +78,7 @@ BucketCalculationInput
 | C1 | All `Money` ≥ 0; all counts ≥ 0; `len(buyers) ≥ 1`. |
 | C2 | `item_cost ≤ total` and `buyer_cost ≤ total`. |
 | C3 | `Σ buyer.buyer_cost == item.buyer_cost`. |
-| C4 | `cap ≥ 0`; `cap == 0` means "no cap" (treated as infinite — any spend is in-policy). |
+| C4 | `cap ≥ 0`; `cap == 0` means "no cap" — the cap comparison is disabled. It does not make every spend in-policy; other policy rules still apply. |
 | C4b | `allowed_classes` empty means "all classes allowed". |
 | C5 | `0 ≤ fee_rate < 1`. |
 | C6 | `upgrade_context` present **iff** `mode == "CLASS"`. |
@@ -205,7 +206,7 @@ is a valid, expected output.
 
 | # | Invariant |
 |---|-----------|
-| O1 | **Reconciliation:** `covered.item + owed.item + covered.buyer_cost + owed.buyer_cost == basis` (± 0.01), where `basis` is defined in the preamble. |
+| O1 | **Reconciliation:** `covered.item + owed.item + covered.buyer_cost + owed.buyer_cost == total + (n_excluded × buyer_not_included_fee)` (± 0.01), where `n_excluded = len(excluded)`. The target is **`total`** — the buckets always partition the whole input. `overage_basis` is never a reconciliation target. |
 | O2 | No bucket field is negative. |
 | O3 | `applicable == false` ⇒ `allocation == null` and `overage == 0`. Says nothing about `violations`, which may be non-empty. |
 
@@ -226,13 +227,13 @@ fee_component = external_total * fee_rate / (1 + fee_rate)
 ### Preamble (both modes)
 
 ```
-N            = len(buyers)
-item_per     = (total - buyer_cost) / N          # per-buyer base cost, add-ons excluded
-basis        = total     if are_buyer_costs_allowed else item_cost
-total_per    = basis / N                          # per-buyer total incl. allowed add-ons
-cap          = policy.cap
-included     = [b for b in buyers if not b.not_included]
-excluded     = [b for b in buyers if b.not_included]
+N             = len(buyers)
+item_per      = (total - buyer_cost) / N         # per-buyer base cost, add-ons excluded
+overage_basis = total if are_buyer_costs_allowed else item_cost
+total_per     = overage_basis / N                # per-buyer yardstick — OVERAGE ONLY
+cap           = policy.cap
+included      = [b for b in buyers if not b.not_included]
+excluded      = [b for b in buyers if b.not_included]
 
 covered.item = covered.buyer_cost = owed.item = owed.buyer_cost = 0
 overage = 0
@@ -245,6 +246,13 @@ if not are_buyer_costs_allowed and item.buyer_cost > 0:
                     "<buyer_cost> add-on cost not allowed by policy" }
 ```
 
+> **`overage_basis` selects the yardstick, not the allocation.** It decides which
+> figure the cap is measured against when computing `overage` — nothing more. It
+> never determines what lands in a bucket, and it is never a reconciliation target.
+> The buckets are always built from `item_per`, `cap` and the per-buyer add-on, which
+> together partition `total`. Reading it as "the base of the allocation" is the
+> single easiest way to get O1 wrong.
+
 ---
 
 ### Mode A — `CAP`
@@ -252,7 +260,7 @@ if not are_buyer_costs_allowed and item.buyer_cost > 0:
 **For each included buyer** (add-on `bc = buyer.buyer_cost`):
 
 ```
-if cap > 0:                                    # cap == 0 ⇒ infinite: policy funds the full base
+if cap > 0:                                    # cap == 0 ⇒ cap rule disabled; see the else branch
     if item_per > cap:                         # base alone exceeds cap
         covered.item      += cap
         owed.item         += item_per - cap
@@ -270,19 +278,25 @@ if cap > 0:                                    # cap == 0 ⇒ infinite: policy f
                  = max(item_per - cap, 0) + bc            otherwise
     overage += round(this_overage, 2)
 
-else:                                           # cap == 0 ⇒ unlimited: nothing can be over it
-    covered.item += item_per
+else:                                           # cap == 0 ⇒ the CAP comparison is disabled
+    covered.item += item_per                    # no cap to exceed, so the base is funded
     if are_buyer_costs_allowed:
         covered.buyer_cost += bc
     else:
-        owed.buyer_cost += bc            # buyer pays it, but it is NOT cap overage
+        owed.buyer_cost += bc
+        overage         += bc               # disallowed add-on — an overage in its own right
 ```
 
-> **`cap == 0` contributes nothing to `overage`.** The sentinel means the cap is
-> infinite, so no spend can exceed it. A disallowed add-on is still owed by the
-> buyer, but it is reported through the `BUYER_COST_NOT_ALLOWED` violation, not as
-> overage. Folding it into `overage` would show an "over limit" figure against a
-> limit that does not exist.
+> **`cap == 0` disables the cap comparison, not overage generation.** The sentinel
+> makes the *cap rule* unenforceable: no spend is measured against a limit, so
+> `max(... - cap, 0)` contributes nothing and the `CAP` violation cannot fire
+> (it is gated on `cap > 0`). It does **not** switch off the other policy rules. An
+> add-on the policy disallows is out of policy on its own terms, independent of any
+> cap, so it still lands in `overage` — and still raises
+> `BUYER_COST_NOT_ALLOWED`.
+>
+> The result is a state worth noting: `applicable == true` with a positive `overage`
+> and **no `CAP` violation**, because the overage came from a different rule.
 
 **For each not-included buyer** (add-on `bc`): buyer pays fully + the fee.
 

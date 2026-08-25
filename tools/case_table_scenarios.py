@@ -101,21 +101,22 @@ CASES = [
     ),
     dict(
         id="scenario-03-add-ons-not-allowed-no-cap",
-        desc="cap == 0 (unlimited) with add-ons disallowed and 107.32 of add-on cost "
-             "bought. The add-on is owed but is NOT overage, because nothing can "
-             "exceed an unlimited cap — so there is no split, yet a violation is "
-             "still emitted. The case for `allocation == null` with a non-empty "
-             "violations list.",
+        desc="cap == 0 with add-ons disallowed and 107.32 of add-on cost bought. The "
+             "cap sentinel disables the CAP comparison only — the disallowed add-on is "
+             "still out of policy on its own terms, so it is owed AND counts as "
+             "overage. The case for a positive overage with NO `CAP` violation, since "
+             "that violation is gated on `cap > 0`.",
         provenance="scenario:03",
         tags=["scenario", "cap", "no-cap", "sentinel", "add-ons", "not-allowed",
-              "violation-without-allocation", "core"],
+              "overage-without-cap-violation", "core"],
         input=cap_input(835.71, 728.39, 107.32, [buyer("b1", 107.32)],
                         cap=0.0, allowed=False, not_incl_fee=NOT_INCLUDED_FEE,
                         included_count=1, fee_rate=FEE, allowed_classes=["ECONOMY"]),
         expected_override=_out(
-            False, 0.0,
+            True, 107.32,
             [{"code": "BUYER_COST_NOT_ALLOWED", "status": "REQUIRES_APPROVAL",
-              "message": "107.32 add-on cost not allowed by policy"}]),
+              "message": "107.32 add-on cost not allowed by policy"}],
+            _alloc(728.39, 0.0, 0.0, 107.32, 1)),
     ),
     dict(
         id="scenario-04-not-included-buyer",

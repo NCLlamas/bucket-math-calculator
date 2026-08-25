@@ -119,14 +119,13 @@
     {
       "id": "cap-09-no-cap-addons-not-allowed",
       "mode": "CAP",
-      "description": "cap == 0 with add-ons disallowed. The buyer owes the add-on, but cap 0 is unlimited so nothing is over it: overage stays 0 and there is no split. A BUYER_COST_NOT_ALLOWED violation is still emitted -- the case for `allocation == null` alongside a NON-empty violations list.",
-      "provenance": "spec:3.A cap == 0 branch; standing violation; unlimited-cap rule",
+      "description": "cap == 0 with add-ons disallowed, two buyers. The sentinel disables the CAP comparison, not overage generation: the disallowed add-on is owed and is overage. Applicable, positive overage, and NO CAP violation -- that one is gated on `cap > 0`. Any consumer assuming `overage > 0 implies a CAP violation` breaks here.",
+      "provenance": "spec:3.A cap == 0 branch; violation gate; standing violation",
       "tags": [
         "cap",
         "no-cap",
         "sentinel",
-        "not-applicable",
-        "violation-without-allocation",
+        "overage-without-cap-violation",
         "add-ons",
         "not-allowed",
         "edge"
@@ -385,7 +384,7 @@
     {
       "id": "scenario-03-add-ons-not-allowed-no-cap",
       "mode": "CAP",
-      "description": "cap == 0 (unlimited) with add-ons disallowed and 107.32 of add-on cost bought. The add-on is owed but is NOT overage, because nothing can exceed an unlimited cap \u2014 so there is no split, yet a violation is still emitted. The case for `allocation == null` with a non-empty violations list.",
+      "description": "cap == 0 with add-ons disallowed and 107.32 of add-on cost bought. The cap sentinel disables the CAP comparison only \u2014 the disallowed add-on is still out of policy on its own terms, so it is owed AND counts as overage. The case for a positive overage with NO `CAP` violation, since that violation is gated on `cap > 0`.",
       "provenance": "scenario:03",
       "tags": [
         "scenario",
@@ -394,7 +393,7 @@
         "sentinel",
         "add-ons",
         "not-allowed",
-        "violation-without-allocation",
+        "overage-without-cap-violation",
         "core"
       ],
       "input": "inputs/scenario-03-add-ons-not-allowed-no-cap.json"

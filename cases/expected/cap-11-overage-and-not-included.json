@@ -37,7 +37,8 @@
   ],
   "reconciliation": {
     "sum_of_buckets": 1525.0,
-    "basis": 1500.0,
+    "target": 1525.0,
+    "overage_basis": 1500.0,
     "total": 1500.0
   }
 }

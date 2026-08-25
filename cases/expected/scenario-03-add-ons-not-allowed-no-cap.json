@@ -1,8 +1,19 @@
 {
-  "applicable": false,
-  "allocation": null,
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 728.39,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 0.0,
+      "buyer_cost": 107.32
+    },
+    "covered_buyer_count": 1,
+    "fee_rate": 0.04
+  },
   "derived": null,
-  "overage": 0.0,
+  "overage": 107.32,
   "violations": [
     {
       "code": "BUYER_COST_NOT_ALLOWED",

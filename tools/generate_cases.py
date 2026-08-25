@@ -156,6 +156,14 @@ def main():
 
         reference = to_expected(allocate(inp))
 
+        # O1 is satisfiable now that the target is `total` (+ the not-included fee).
+        # Enforce it so a future change cannot quietly break reconciliation again.
+        rec = reference.get("reconciliation")
+        if rec and abs(rec["sum_of_buckets"] - rec["target"]) > TOLERANCE:
+            raise SystemExit(
+                f"{cid}: O1 reconciliation failed — buckets {rec['sum_of_buckets']} "
+                f"!= target {rec['target']}")
+
         override = case.get("expected_override")
         if override is None:
             expected = reference

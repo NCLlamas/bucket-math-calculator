@@ -147,8 +147,10 @@ def allocate(inp, ranks=None):
     # --- Preamble ------------------------------------------------------------
     n = len(buyers)
     item_per = (total - agg_buyer_cost) / n
-    basis = total if allowed else item_cost
-    total_per = basis / n
+    # Yardstick for the overage comparison ONLY — never a bucket or a
+    # reconciliation target. Buckets always partition `total`.
+    overage_basis = total if allowed else item_cost
+    total_per = overage_basis / n
 
     included = [b for b in buyers if not b["not_included"]]
     excluded = [b for b in buyers if b["not_included"]]
@@ -191,9 +193,10 @@ def allocate(inp, ranks=None):
                 if allowed:
                     c_bc += bc
                 else:
-                    # cap == 0 is unlimited: the buyer still owes the add-on, but it
-                    # is not overage against a cap that does not exist.
+                    # cap == 0 disables the CAP comparison only. A disallowed add-on
+                    # is out of policy on its own terms, so it is still overage.
                     o_bc += bc
+                    overage += bc
 
         excluded_cost = 0.0
         for b in excluded:
@@ -306,7 +309,8 @@ def allocate(inp, ranks=None):
         "violations": violations,
         "_reconciliation": {
             "sum_of_buckets": _m(c_item + o_item + c_bc + o_bc),
-            "basis": _m(basis),
+            "target": _m(total + len(excluded) * not_incl_fee),
+            "overage_basis": _m(overage_basis),
             "total": _m(total),
         },
     }
