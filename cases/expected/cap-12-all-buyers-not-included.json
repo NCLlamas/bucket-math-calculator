@@ -1,0 +1,38 @@
+{
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 0.0,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 1050.0,
+      "buyer_cost": 0.0
+    },
+    "covered_buyer_count": 0,
+    "fee_rate": 0.04
+  },
+  "derived": {
+    "covered": {
+      "total": 0.0
+    },
+    "owed": {
+      "base": 1050.0,
+      "fee": 42.0,
+      "total": 1092.0
+    }
+  },
+  "overage": 1050.0,
+  "violations": [
+    {
+      "code": "NOT_INCLUDED",
+      "status": "REQUIRES_USER_CHOICE",
+      "message": "2 not-included buyer(s)"
+    }
+  ],
+  "reconciliation": {
+    "sum_of_buckets": 1050.0,
+    "basis": 1000.0,
+    "total": 1000.0
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "mode": "CLASS",
+  "item": {
+    "total": 2000,
+    "item_cost": 2000,
+    "buyer_cost": 0
+  },
+  "buyers": [
+    {
+      "id": "b1",
+      "not_included": false,
+      "buyer_cost": 0.0
+    },
+    {
+      "id": "b2",
+      "not_included": false,
+      "buyer_cost": 0.0
+    }
+  ],
+  "policy": {
+    "cap": 0,
+    "are_buyer_costs_allowed": true,
+    "buyer_not_included_fee": 0.0,
+    "included_buyer_count": 2,
+    "allowed_classes": []
+  },
+  "fee_rate": 0.04,
+  "upgrade_context": {
+    "selected_class": "TIER_3",
+    "alternate_classes": [
+      {
+        "class": "TIER_4",
+        "cost": 3000
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "applicable": false,
+  "allocation": null,
+  "derived": null,
+  "overage": 0.0,
+  "violations": [],
+  "assert_skip": [
+    "derived"
+  ],
+  "source": {
+    "itinerary_id": "06a748d4-a76a-72fb-8000-1535bc3754bf",
+    "prod_case": "checkout_01_in_policy_no_violations"
+  }
+}

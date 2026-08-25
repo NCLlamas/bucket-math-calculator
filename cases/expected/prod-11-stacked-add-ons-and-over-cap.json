@@ -1,0 +1,36 @@
+{
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 700.0,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 117.38,
+      "buyer_cost": 22.56
+    },
+    "covered_buyer_count": 1,
+    "fee_rate": 0.04
+  },
+  "derived": null,
+  "overage": 139.94,
+  "violations": [
+    {
+      "code": "BUYER_COST_NOT_ALLOWED",
+      "status": "REQUIRES_APPROVAL",
+      "message": "Out of Policy: Paid Seats: ($22.56) Not Included in Policy"
+    },
+    {
+      "code": "CAP",
+      "status": "REQUIRES_USER_CHOICE",
+      "message": "Booking $139.94 Over Limit"
+    }
+  ],
+  "assert_skip": [
+    "derived"
+  ],
+  "source": {
+    "itinerary_id": "06a73436-608b-786d-8000-74d4fbb7fa0a",
+    "prod_case": "checkout_11_stacked_seat_and_price_cap"
+  }
+}

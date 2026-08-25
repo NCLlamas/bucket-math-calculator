@@ -1,0 +1,38 @@
+{
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 1400.0,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 600.0,
+      "buyer_cost": 0.0
+    },
+    "covered_buyer_count": 2,
+    "fee_rate": 0.04
+  },
+  "derived": {
+    "covered": {
+      "total": 1400.0
+    },
+    "owed": {
+      "base": 600.0,
+      "fee": 24.0,
+      "total": 624.0
+    }
+  },
+  "overage": 600.0,
+  "violations": [
+    {
+      "code": "CLASS",
+      "status": "REQUIRES_SPLIT_PAY",
+      "message": "600.00 over cap"
+    }
+  ],
+  "reconciliation": {
+    "sum_of_buckets": 2000.0,
+    "basis": 2000.0,
+    "total": 2000.0
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "mode": "CAP",
+  "item": {
+    "total": 1000,
+    "item_cost": 1000,
+    "buyer_cost": 0
+  },
+  "buyers": [
+    {
+      "id": "b1",
+      "not_included": false,
+      "buyer_cost": 0.0
+    },
+    {
+      "id": "b2",
+      "not_included": false,
+      "buyer_cost": 0.0
+    }
+  ],
+  "policy": {
+    "cap": 400,
+    "are_buyer_costs_allowed": true,
+    "buyer_not_included_fee": 0.0,
+    "included_buyer_count": 2,
+    "allowed_classes": []
+  },
+  "fee_rate": 0.04
+}

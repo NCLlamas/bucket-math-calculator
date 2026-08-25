@@ -1,0 +1,31 @@
+{
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 459.8,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 90.01,
+      "buyer_cost": 0.0
+    },
+    "covered_buyer_count": 1,
+    "fee_rate": 0.04
+  },
+  "derived": null,
+  "overage": 90.01,
+  "violations": [
+    {
+      "code": "CLASS",
+      "status": "REQUIRES_SPLIT_PAY",
+      "message": "Class Upgrade: $90.01 difference from in-policy fare"
+    }
+  ],
+  "assert_skip": [
+    "derived"
+  ],
+  "source": {
+    "itinerary_id": "06a73e55-5140-7dff-8000-8e01f8309d30",
+    "prod_case": "checkout_02_class_upgrade_split_pay"
+  }
+}

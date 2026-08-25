@@ -1,0 +1,38 @@
+{
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 500.0,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 1500.0,
+      "buyer_cost": 0.0
+    },
+    "covered_buyer_count": 2,
+    "fee_rate": 0.04
+  },
+  "derived": {
+    "covered": {
+      "total": 500.0
+    },
+    "owed": {
+      "base": 1500.0,
+      "fee": 60.0,
+      "total": 1560.0
+    }
+  },
+  "overage": 1500.0,
+  "violations": [
+    {
+      "code": "CLASS",
+      "status": "REQUIRES_SPLIT_PAY",
+      "message": "1500.00 difference from in-policy class"
+    }
+  ],
+  "reconciliation": {
+    "sum_of_buckets": 2000.0,
+    "basis": 2000.0,
+    "total": 2000.0
+  }
+}

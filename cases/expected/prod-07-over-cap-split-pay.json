@@ -1,0 +1,31 @@
+{
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 700.0,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 148.8,
+      "buyer_cost": 0.0
+    },
+    "covered_buyer_count": 1,
+    "fee_rate": 0.04
+  },
+  "derived": null,
+  "overage": 148.8,
+  "violations": [
+    {
+      "code": "CAP",
+      "status": "REQUIRES_USER_CHOICE",
+      "message": "Booking $148.80 Over Limit"
+    }
+  ],
+  "assert_skip": [
+    "derived"
+  ],
+  "source": {
+    "itinerary_id": "06a74976-3581-7828-8000-ab9b94003075",
+    "prod_case": "checkout_07_price_cap_split_pay"
+  }
+}

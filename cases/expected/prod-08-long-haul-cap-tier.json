@@ -1,0 +1,32 @@
+{
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 1500.0,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 88.03,
+      "buyer_cost": 0.0
+    },
+    "covered_buyer_count": 1,
+    "fee_rate": 0.04
+  },
+  "derived": null,
+  "overage": 88.03,
+  "violations": [
+    {
+      "code": "CAP",
+      "status": "REQUIRES_USER_CHOICE",
+      "message": "Booking $88.03 Over Limit"
+    }
+  ],
+  "assert_skip": [
+    "derived"
+  ],
+  "source": {
+    "itinerary_id": "06a6d78b-70c7-7cf1-8000-764339a074d3",
+    "prod_case": "checkout_08_long_haul_tier",
+    "note": "long_price_cap 1500 vs short_price_cap 750; the generic function does not own tier selection."
+  }
+}

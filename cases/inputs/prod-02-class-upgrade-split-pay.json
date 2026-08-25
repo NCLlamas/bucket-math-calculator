@@ -1,0 +1,53 @@
+{
+  "mode": "CLASS",
+  "item": {
+    "total": 549.81,
+    "item_cost": 549.81,
+    "buyer_cost": 0.0
+  },
+  "buyers": [
+    {
+      "id": "pax1",
+      "not_included": false,
+      "buyer_cost": 0.0
+    }
+  ],
+  "policy": {
+    "cap": 500.0,
+    "are_buyer_costs_allowed": true,
+    "buyer_not_included_fee": 35.0,
+    "included_buyer_count": 1,
+    "allowed_classes": [
+      "BASIC",
+      "ECONOMY",
+      "PREMIUM_ECONOMY",
+      "BUSINESS"
+    ]
+  },
+  "fee_rate": 0.04,
+  "upgrade_context": {
+    "selected_class": "ECONOMY",
+    "alternate_classes": [
+      {
+        "class": "ECONOMY",
+        "cost": 459.8
+      },
+      {
+        "class": "PREMIUM_ECONOMY",
+        "cost": 587.8
+      },
+      {
+        "class": "PREMIUM_ECONOMY",
+        "cost": 648.8
+      },
+      {
+        "class": "FIRST",
+        "cost": 651.8
+      },
+      {
+        "class": "FIRST",
+        "cost": 925.4
+      }
+    ]
+  }
+}

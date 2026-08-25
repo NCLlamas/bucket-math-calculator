@@ -115,13 +115,27 @@ BucketCalculationOutput
 └── violations: [ Violation { code, status, message } ]
 ```
 
+### Violation codes
+
+| Code | Status | Emitted when |
+|------|--------|--------------|
+| `CAP` | `REQUIRES_USER_CHOICE` | `overage > 0` **and** `cap > 0` |
+| `NOT_INCLUDED` | `REQUIRES_USER_CHOICE` | `excluded_cost > 0` |
+| `BUYER_COST_NOT_ALLOWED` | `REQUIRES_APPROVAL` | `are_buyer_costs_allowed == false` **and** `item.buyer_cost > 0` |
+| `CLASS` | `REQUIRES_SPLIT_PAY` | CLASS mode resolved a benchmark and `owed_per > 0` |
+| `CLASS` | `REQUIRES_APPROVAL` | CLASS mode found no benchmark, or `owed_per <= 0` |
+
+`BUYER_COST_NOT_ALLOWED` is **mode-independent** and is emitted even when
+`applicable == false`. A non-null `violations` list alongside a null `allocation`
+is a valid, expected output.
+
 ### Invariants (must hold on every non-null allocation)
 
 | # | Invariant |
 |---|-----------|
 | O1 | **Reconciliation:** `covered.item + owed.item + covered.buyer_cost + owed.buyer_cost == basis` (± 0.01), where `basis` is defined in the preamble. |
 | O2 | No bucket field is negative. |
-| O3 | `applicable == false` ⇒ `allocation == null` and `overage == 0`. |
+| O3 | `applicable == false` ⇒ `allocation == null` and `overage == 0`. Says nothing about `violations`, which may be non-empty. |
 
 ### Fee direction (important)
 
@@ -150,6 +164,13 @@ excluded     = [b for b in buyers if b.not_included]
 
 covered.item = covered.buyer_cost = owed.item = owed.buyer_cost = 0
 overage = 0
+
+# Standing violation — a policy fact, independent of mode and of any allocation.
+# Emitted on EVERY return path, including the not-applicable ones.
+violations = []
+if not are_buyer_costs_allowed and item.buyer_cost > 0:
+    violations += { BUYER_COST_NOT_ALLOWED, REQUIRES_APPROVAL,
+                    "<buyer_cost> add-on cost not allowed by policy" }
 ```
 
 ---
@@ -177,14 +198,19 @@ if cap > 0:                                    # cap == 0 ⇒ infinite: policy f
                  = max(item_per - cap, 0) + bc            otherwise
     overage += round(this_overage, 2)
 
-else:                                           # no enforceable cap → policy funds base
+else:                                           # cap == 0 ⇒ unlimited: nothing can be over it
     covered.item += item_per
     if are_buyer_costs_allowed:
         covered.buyer_cost += bc
     else:
-        owed.buyer_cost += bc
-        overage         += bc
+        owed.buyer_cost += bc            # buyer pays it, but it is NOT cap overage
 ```
+
+> **`cap == 0` contributes nothing to `overage`.** The sentinel means the cap is
+> infinite, so no spend can exceed it. A disallowed add-on is still owed by the
+> buyer, but it is reported through the `BUYER_COST_NOT_ALLOWED` violation, not as
+> overage. Folding it into `overage` would show an "over limit" figure against a
+> limit that does not exist.
 
 **For each not-included buyer** (add-on `bc`): buyer pays fully + the fee.
 

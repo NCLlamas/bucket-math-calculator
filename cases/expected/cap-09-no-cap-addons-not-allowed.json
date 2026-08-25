@@ -1,0 +1,13 @@
+{
+  "applicable": false,
+  "allocation": null,
+  "derived": null,
+  "overage": 0.0,
+  "violations": [
+    {
+      "code": "BUYER_COST_NOT_ALLOWED",
+      "status": "REQUIRES_APPROVAL",
+      "message": "200.00 add-on cost not allowed by policy"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "applicable": true,
+  "allocation": {
+    "covered": {
+      "item": 800.0,
+      "buyer_cost": 0.0
+    },
+    "owed": {
+      "item": 200.0,
+      "buyer_cost": 0.0
+    },
+    "covered_buyer_count": 2,
+    "fee_rate": 0.0
+  },
+  "derived": {
+    "covered": {
+      "total": 800.0
+    },
+    "owed": {
+      "base": 200.0,
+      "fee": 0.0,
+      "total": 200.0
+    }
+  },
+  "overage": 200.0,
+  "violations": [
+    {
+      "code": "CAP",
+      "status": "REQUIRES_USER_CHOICE",
+      "message": "200.00 over limit"
+    }
+  ],
+  "reconciliation": {
+    "sum_of_buckets": 1000.0,
+    "basis": 1000.0,
+    "total": 1000.0
+  }
+}

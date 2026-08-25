@@ -1,0 +1,25 @@
+{
+  "mode": "CAP",
+  "item": {
+    "total": 835.71,
+    "item_cost": 728.39,
+    "buyer_cost": 107.32
+  },
+  "buyers": [
+    {
+      "id": "pax1",
+      "not_included": false,
+      "buyer_cost": 107.32
+    }
+  ],
+  "policy": {
+    "cap": 0.0,
+    "are_buyer_costs_allowed": false,
+    "buyer_not_included_fee": 35.0,
+    "included_buyer_count": 1,
+    "allowed_classes": [
+      "ECONOMY"
+    ]
+  },
+  "fee_rate": 0.04
+}

@@ -1,0 +1,20 @@
+{
+  "applicable": false,
+  "allocation": null,
+  "derived": null,
+  "overage": 0.0,
+  "violations": [
+    {
+      "code": "BUYER_COST_NOT_ALLOWED",
+      "status": "REQUIRES_APPROVAL",
+      "message": "Out of Policy: Paid Seats: ($107.32) Not Included in Policy"
+    }
+  ],
+  "assert_skip": [
+    "derived"
+  ],
+  "source": {
+    "itinerary_id": "069f3c01-1672-7ab4-8000-75e75bb7f9ac",
+    "prod_case": "checkout_04_paid_seats_not_covered"
+  }
+}
