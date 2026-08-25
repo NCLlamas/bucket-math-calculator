@@ -92,7 +92,7 @@
       "id": "cap-07-addons-not-allowed",
       "mode": "CAP",
       "description": "Add-ons are disallowed, so the full add-on cost is owed regardless of cap room, and overage uses the item-only formula. Emits both the CAP and the BUYER_COST_NOT_ALLOWED violation.",
-      "provenance": "spec:3.A are_buyer_costs_allowed == false; G2",
+      "provenance": "spec:3.A are_buyer_costs_allowed == false; standing violation",
       "tags": [
         "cap",
         "add-ons",
@@ -120,7 +120,7 @@
       "id": "cap-09-no-cap-addons-not-allowed",
       "mode": "CAP",
       "description": "cap == 0 with add-ons disallowed. The buyer owes the add-on, but cap 0 is unlimited so nothing is over it: overage stays 0 and there is no split. A BUYER_COST_NOT_ALLOWED violation is still emitted -- the case for `allocation == null` alongside a NON-empty violations list.",
-      "provenance": "spec:3.A cap == 0 branch; G2 standing violation; G3",
+      "provenance": "spec:3.A cap == 0 branch; standing violation; unlimited-cap rule",
       "tags": [
         "cap",
         "no-cap",
@@ -344,62 +344,51 @@
     {
       "id": "class-10-addons-not-allowed-still-owed",
       "mode": "CLASS",
-      "description": "are_buyer_costs_allowed == false in CLASS mode. The override lands on the same result as the allowed case, but basis becomes item_cost, which surfaces the reconciliation ambiguity. Also the only check that the G2 standing violation is mode-independent -- no production coverage.",
-      "provenance": "spec:3.B override with allowed == false; G2 in CLASS mode",
+      "description": "are_buyer_costs_allowed == false in CLASS mode. The override lands on the same result as the allowed case, but basis becomes item_cost, which surfaces the reconciliation ambiguity. Also the ONLY check anywhere that the BUYER_COST_NOT_ALLOWED violation is mode-independent, and it is derived rather than fixed -- so it confirms the spec, not correctness.",
+      "provenance": "spec:3.B override with allowed == false; BUYER_COST_NOT_ALLOWED in CLASS mode",
       "tags": [
         "class",
         "add-ons",
         "not-allowed",
         "reconciliation-defect",
-        "no-prod-coverage",
+        "derived-only",
         "edge"
       ],
       "input": "inputs/class-10-addons-not-allowed-still-owed.json"
     },
     {
-      "id": "prod-01-in-policy-no-violations",
+      "id": "scenario-01-in-policy-no-violations",
       "mode": "CAP",
-      "description": "In policy, no violations. Single traveler, fare 505.40 comfortably under the 650 cap, no paid seats. The clean baseline.",
-      "provenance": "ENG-1035:01",
+      "description": "Single buyer, item cost 505.40 comfortably under the 650 cap, no add-ons. The clean baseline: nothing is over policy, so there is no split and no violation.",
+      "provenance": "scenario:01",
       "tags": [
-        "prod",
-        "core",
+        "scenario",
         "cap",
         "not-applicable",
         "happy-path"
       ],
-      "source": {
-        "itinerary_id": "06a748d4-a76a-72fb-8000-1535bc3754bf",
-        "prod_case": "checkout_01_in_policy_no_violations"
-      },
-      "input": "inputs/prod-01-in-policy-no-violations.json"
+      "input": "inputs/scenario-01-in-policy-no-violations.json"
     },
     {
-      "id": "prod-02-class-upgrade-split-pay",
+      "id": "scenario-02-class-benchmark-below-cap",
       "mode": "CLASS",
-      "description": "Class upgrade with split pay. Selected fare 549.81 sits above the best in-policy fare the org would cover (459.80); the 90.01 difference goes to the buyer. Note the benchmark is a cheaper fare in the SAME class, not a lower class.",
-      "provenance": "ENG-1035:02",
+      "description": "Selected class costs 549.81 while the best in-policy alternate costs 459.80; the 90.01 difference is owed. Note the benchmark is a cheaper option at the SAME rank as the selection, not a lower rank.",
+      "provenance": "scenario:02",
       "tags": [
-        "prod",
-        "core",
+        "scenario",
         "class",
         "benchmark",
-        "same-class-benchmark"
+        "same-rank-benchmark"
       ],
-      "source": {
-        "itinerary_id": "06a73e55-5140-7dff-8000-8e01f8309d30",
-        "prod_case": "checkout_02_class_upgrade_split_pay"
-      },
-      "input": "inputs/prod-02-class-upgrade-split-pay.json"
+      "input": "inputs/scenario-02-class-benchmark-below-cap.json"
     },
     {
-      "id": "prod-04-add-ons-not-allowed-no-cap",
+      "id": "scenario-03-add-ons-not-allowed-no-cap",
       "mode": "CAP",
-      "description": "Paid seats not covered on an OPEN-mode event (cap 0). A seat-coverage violation is emitted while upgrades stay 0, because cap 0 is unlimited and nothing can be over it. The case that drove both G2 and G3.",
-      "provenance": "ENG-1035:04",
+      "description": "cap == 0 (unlimited) with add-ons disallowed and 107.32 of add-on cost bought. The add-on is owed but is NOT overage, because nothing can exceed an unlimited cap \u2014 so there is no split, yet a violation is still emitted. The case for `allocation == null` with a non-empty violations list.",
+      "provenance": "scenario:03",
       "tags": [
-        "prod",
-        "core",
+        "scenario",
         "cap",
         "no-cap",
         "sentinel",
@@ -408,137 +397,97 @@
         "violation-without-allocation",
         "core"
       ],
-      "source": {
-        "itinerary_id": "069f3c01-1672-7ab4-8000-75e75bb7f9ac",
-        "prod_case": "checkout_04_paid_seats_not_covered"
-      },
-      "input": "inputs/prod-04-add-ons-not-allowed-no-cap.json"
+      "input": "inputs/scenario-03-add-ons-not-allowed-no-cap.json"
     },
     {
-      "id": "prod-05-not-included-buyer-split-pay",
+      "id": "scenario-04-not-included-buyer",
       "mode": "CAP",
-      "description": "Additional traveler beyond the covered-guest count. The covered pax is within cap so the company funds it; the additional pax's full fare plus the 35 ticketing fee shifts to the buyer.",
-      "provenance": "ENG-1035:05",
+      "description": "Two buyers, one beyond the included count. The included buyer is within cap so the policy funds it; the not-included buyer's full share plus the 35.00 not-included fee shifts to the owed bucket. Buckets exceed `total` by exactly that fee.",
+      "provenance": "scenario:04",
       "tags": [
-        "prod",
-        "core",
+        "scenario",
         "cap",
         "not-included",
         "fee-creates-cost",
         "core"
       ],
-      "source": {
-        "itinerary_id": "06a6cc47-dfa4-70fe-8000-edbdcad7a496",
-        "prod_case": "checkout_05_additional_traveler_split_pay"
-      },
-      "input": "inputs/prod-05-not-included-buyer-split-pay.json"
+      "input": "inputs/scenario-04-not-included-buyer.json"
     },
     {
-      "id": "prod-06-class-upgrade-requires-approval",
+      "id": "scenario-05-class-no-benchmark-requires-approval",
       "mode": "CLASS",
-      "description": "Class upgrade with no in-policy benchmark and no enforceable cap. The engine cannot compute a split, so it clears the summary, turns split pay off, and routes to approval.",
-      "provenance": "ENG-1035:06",
+      "description": "CLASS mode where the selected class is outside `allowed_classes`, the only alternate shares its rank so is equally disallowed, and cap == 0. No benchmark can be resolved, so the calculation is not applicable and routes to approval.",
+      "provenance": "scenario:05",
       "tags": [
-        "prod",
-        "complex",
+        "scenario",
         "class",
         "not-applicable",
-        "requires-approval",
-        "policy-drift",
-        "divergence-G4"
+        "requires-approval"
       ],
-      "source": {
-        "itinerary_id": "06a35d42-fd8a-7da8-8000-ab530c043f86",
-        "prod_case": "checkout_06_class_upgrade_requires_approval",
-        "note": "price_cap pinned to 0.0 from the persisted summary; the current policy row shows long_price_cap 500 (edited post-booking)."
-      },
-      "input": "inputs/prod-06-class-upgrade-requires-approval.json"
+      "input": "inputs/scenario-05-class-no-benchmark-requires-approval.json"
     },
     {
-      "id": "prod-07-over-cap-split-pay",
+      "id": "scenario-06-over-cap",
       "mode": "CAP",
-      "description": "Cost over cap: fare 848.80 against a 700 cap. Company covers the cap, buyer covers the 148.80 excess.",
-      "provenance": "ENG-1035:07",
+      "description": "Item cost 848.80 against a 700 cap. The policy funds the cap, the buyer owes the 148.80 excess.",
+      "provenance": "scenario:06",
       "tags": [
-        "prod",
-        "complex",
+        "scenario",
         "cap",
         "over-cap",
         "core"
       ],
-      "source": {
-        "itinerary_id": "06a74976-3581-7828-8000-ab9b94003075",
-        "prod_case": "checkout_07_price_cap_split_pay"
-      },
-      "input": "inputs/prod-07-over-cap-split-pay.json"
+      "input": "inputs/scenario-06-over-cap.json"
     },
     {
-      "id": "prod-08-long-haul-cap-tier",
+      "id": "scenario-07-large-values-over-cap",
       "mode": "CAP",
-      "description": "Long-haul tier selection: a 12.8h leg pushes the policy to the long tier (cap 1500, not the short 750). Tier selection happens UPSTREAM of the allocator, so here the resolved cap 1500 is simply the input.",
-      "provenance": "ENG-1035:08",
+      "description": "Same branch as scenario-06 at an order of magnitude larger: cap 1500, item cost 1588.03, overage 88.03. Guards against precision loss where a small excess sits on top of a large base.",
+      "provenance": "scenario:07",
       "tags": [
-        "prod",
-        "complex",
+        "scenario",
         "cap",
         "over-cap",
-        "upstream-tier-selection"
+        "precision"
       ],
-      "source": {
-        "itinerary_id": "06a6d78b-70c7-7cf1-8000-764339a074d3",
-        "prod_case": "checkout_08_long_haul_tier",
-        "note": "long_price_cap 1500 vs short_price_cap 750; the generic function does not own tier selection."
-      },
-      "input": "inputs/prod-08-long-haul-cap-tier.json"
+      "input": "inputs/scenario-07-large-values-over-cap.json"
     },
     {
-      "id": "prod-09-add-ons-allowed-partial-cap-room",
+      "id": "scenario-08-add-ons-partial-cap-room",
       "mode": "CAP",
-      "description": "Paid seats allowed and partially covered by leftover cap room. Fare 687.52 under the 700 cap leaves 12.48 of room, which the company applies to the 184.88 seat cost; the buyer covers the remaining 172.40. Exercises all four buckets at once.",
-      "provenance": "ENG-1035:09",
+      "description": "Add-ons allowed and partly covered by leftover cap room. Item cost 687.52 under the 700 cap leaves 12.48 of room, applied to the 184.88 add-on; the buyer covers the remaining 172.40. The only case where all four buckets carry distinct non-trivial values at once.",
+      "provenance": "scenario:08",
       "tags": [
-        "prod",
-        "complex",
+        "scenario",
         "cap",
         "add-ons",
         "partial-room",
         "four-buckets",
         "core"
       ],
-      "source": {
-        "itinerary_id": "06a73eea-9ec4-7db4-8000-fe50c0ee5831",
-        "prod_case": "checkout_09_paid_seats_allowed_partial_cap"
-      },
-      "input": "inputs/prod-09-add-ons-allowed-partial-cap-room.json"
+      "input": "inputs/scenario-08-add-ons-partial-cap-room.json"
     },
     {
-      "id": "prod-10-covered-guests-multi-buyer",
+      "id": "scenario-09-multi-buyer-all-included",
       "mode": "CAP",
-      "description": "Two travelers, both inside the covered count (1 guest + primary). Per-pax fare 771.20 under the 800 cap, so both are company-funded and there is no violation. The contrast case to prod-05.",
-      "provenance": "ENG-1035:10",
+      "description": "Two buyers, both inside the included count, per-buyer share 771.20 under the 800 cap. Everything is funded and there is no violation. The contrast case to scenario-04.",
+      "provenance": "scenario:09",
       "tags": [
-        "prod",
-        "complex",
+        "scenario",
         "cap",
         "multi-buyer",
-        "covered-guests",
         "not-applicable",
         "happy-path"
       ],
-      "source": {
-        "itinerary_id": "06a67c61-c692-7ac3-8000-aa5f3385c3cb",
-        "prod_case": "checkout_10_covered_guests_multi_pax"
-      },
-      "input": "inputs/prod-10-covered-guests-multi-buyer.json"
+      "input": "inputs/scenario-09-multi-buyer-all-included.json"
     },
     {
-      "id": "prod-11-stacked-add-ons-and-over-cap",
+      "id": "scenario-10-stacked-add-ons-and-over-cap",
       "mode": "CAP",
-      "description": "Stacked violations: fare 817.38 over the 700 cap AND a 22.56 paid seat that policy does not cover. Overage sums both (117.38 + 22.56) and two violations are emitted.",
-      "provenance": "ENG-1035:11",
+      "description": "Two conditions at once: item cost 817.38 over the 700 cap AND a 22.56 add-on the policy does not allow. Overage sums both (117.38 + 22.56) and two violations are emitted.",
+      "provenance": "scenario:10",
       "tags": [
-        "prod",
-        "complex",
+        "scenario",
         "cap",
         "over-cap",
         "add-ons",
@@ -546,11 +495,7 @@
         "two-violations",
         "core"
       ],
-      "source": {
-        "itinerary_id": "06a73436-608b-786d-8000-74d4fbb7fa0a",
-        "prod_case": "checkout_11_stacked_seat_and_price_cap"
-      },
-      "input": "inputs/prod-11-stacked-add-ons-and-over-cap.json"
+      "input": "inputs/scenario-10-stacked-add-ons-and-over-cap.json"
     }
   ]
 }

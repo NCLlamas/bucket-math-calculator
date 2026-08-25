@@ -6,9 +6,5 @@
   "violations": [],
   "assert_skip": [
     "derived"
-  ],
-  "source": {
-    "itinerary_id": "06a67c61-c692-7ac3-8000-aa5f3385c3cb",
-    "prod_case": "checkout_10_covered_guests_multi_pax"
-  }
+  ]
 }

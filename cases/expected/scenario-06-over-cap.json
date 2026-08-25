@@ -2,30 +2,26 @@
   "applicable": true,
   "allocation": {
     "covered": {
-      "item": 590.4,
+      "item": 700.0,
       "buyer_cost": 0.0
     },
     "owed": {
-      "item": 625.4,
+      "item": 148.8,
       "buyer_cost": 0.0
     },
     "covered_buyer_count": 1,
     "fee_rate": 0.04
   },
   "derived": null,
-  "overage": 625.4,
+  "overage": 148.8,
   "violations": [
     {
-      "code": "NOT_INCLUDED",
+      "code": "CAP",
       "status": "REQUIRES_USER_CHOICE",
-      "message": "1 Additional Traveler(s)"
+      "message": "148.80 over limit"
     }
   ],
   "assert_skip": [
     "derived"
-  ],
-  "source": {
-    "itinerary_id": "06a6cc47-dfa4-70fe-8000-edbdcad7a496",
-    "prod_case": "checkout_05_additional_traveler_split_pay"
-  }
+  ]
 }

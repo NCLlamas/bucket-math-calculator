@@ -296,31 +296,3 @@ owed.total    = round(owed.base * (1 + fee_rate), 2)   # fee charged forward
 > mode differs only in that the cap is replaced by the best in-policy class
 > **benchmark** and add-ons always fall to the buyer.
 
----
-
-## Appendix — Concrete instantiation (flight travel)
-
-The generic model maps onto the flight split-pay feature as follows:
-
-| Generic | Flight domain |
-|---------|---------------|
-| item | A flight booking |
-| item_cost | Airfare only |
-| buyer_cost | Paid-seat cost |
-| total | Airfare + all ancillaries |
-| buyer | Passenger / traveler |
-| not_included | Traveler beyond the policy's covered-guest count |
-| cap | Per-passenger price cap |
-| are_buyer_costs_allowed | Paid seats allowed by policy |
-| buyer_not_included_fee | Per-additional-traveler ticketing fee |
-| class / class rank | Cabin class / cabin hierarchy |
-| covered bucket | Company (org wallet) |
-| owed bucket | Traveler (personal card) |
-| fee_rate | Payment processing fee (default 4%) |
-| overage | "Over limit" upgrade amount shown to the traveler |
-
-**Source of truth for the current implementation:**
-`src/engine/policy/flight/base/strategy.py` (allocation core),
-`src/data/itinerary/booking_intent/flight/model.py` (totals + fee),
-`src/services/invoices/invoice_split_pay_helper.py` (fee back-calculation),
-`src/core/finance/reconciliation.py` (reconciliation invariant).

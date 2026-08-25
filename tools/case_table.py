@@ -7,7 +7,8 @@ so inputs and expectations can never drift apart.
 
 provenance:
   "spec:<section>"  - branch coverage derived from bucket-calculations-spec.md
-  "ENG-1035:<n>"    - translated from a production case in Linear ENG-1035
+  "scenario:<n>"    - a composite scenario with a fixed expected output, defined in
+                      case_table_scenarios.py
 """
 
 
@@ -103,7 +104,7 @@ CASES = [
         desc="Add-ons are disallowed, so the full add-on cost is owed regardless of "
              "cap room, and overage uses the item-only formula. Emits both the CAP "
              "and the BUYER_COST_NOT_ALLOWED violation.",
-        provenance="spec:3.A are_buyer_costs_allowed == false; G2",
+        provenance="spec:3.A are_buyer_costs_allowed == false; standing violation",
         tags=["cap", "add-ons", "not-allowed", "core", "two-violations",
               "reconciliation-defect"],
         input=cap_input(1000, 800, 200, [buyer("b1", 100), buyer("b2", 100)], cap=450, allowed=False),
@@ -122,7 +123,7 @@ CASES = [
              "is unlimited so nothing is over it: overage stays 0 and there is no "
              "split. A BUYER_COST_NOT_ALLOWED violation is still emitted -- the case "
              "for `allocation == null` alongside a NON-empty violations list.",
-        provenance="spec:3.A cap == 0 branch; G2 standing violation; G3",
+        provenance="spec:3.A cap == 0 branch; standing violation; unlimited-cap rule",
         tags=["cap", "no-cap", "sentinel", "not-applicable",
               "violation-without-allocation", "add-ons", "not-allowed", "edge"],
         input=cap_input(1000, 800, 200, [buyer("b1", 100), buyer("b2", 100)], cap=0, allowed=False),
@@ -302,11 +303,12 @@ CASES = [
         id="class-10-addons-not-allowed-still-owed",
         desc="are_buyer_costs_allowed == false in CLASS mode. The override lands on "
              "the same result as the allowed case, but basis becomes item_cost, which "
-             "surfaces the reconciliation ambiguity. Also the only check that the G2 "
-             "standing violation is mode-independent -- no production coverage.",
-        provenance="spec:3.B override with allowed == false; G2 in CLASS mode",
+             "surfaces the reconciliation ambiguity. Also the ONLY check anywhere "
+             "that the BUYER_COST_NOT_ALLOWED violation is mode-independent, and it "
+             "is derived rather than fixed -- so it confirms the spec, not correctness.",
+        provenance="spec:3.B override with allowed == false; BUYER_COST_NOT_ALLOWED in CLASS mode",
         tags=["class", "add-ons", "not-allowed", "reconciliation-defect",
-              "no-prod-coverage", "edge"],
+              "derived-only", "edge"],
         input=class_input(2200, 2000, 200, [buyer("b1", 100), buyer("b2", 100)],
                           cap=0, allowed=False, selected="TIER_3",
                           alternates=[("TIER_2", 1200)]),

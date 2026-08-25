@@ -6,11 +6,11 @@ let validate_cases.py self-check. It is deliberately literal: branch order,
 round() placement and accumulation order mirror the pseudocode line for line,
 including the spec's known quirks (see cases/README.md "Findings").
 
-Not intended as production code.
+Not intended as an implementation to ship.
 """
 
-# One ranked class universe for the whole suite: TIER_* for the spec-derived cases,
-# the cabin ladder for the ENG-1035 production cases.
+# One ranked class universe for the whole suite: TIER_* for the branch probes,
+# the second ladder for the composite scenarios.
 CLASS_RANKS = {
     "TIER_1": 1, "TIER_2": 2, "TIER_3": 3, "TIER_4": 4,
     "BASIC": 1, "ECONOMY": 2, "PREMIUM_ECONOMY": 3, "BUSINESS": 4, "FIRST": 5,
@@ -57,8 +57,8 @@ def allocate(inp, ranks=None):
     c_item = c_bc = o_item = o_bc = 0.0
     overage = 0.0
 
-    # G2 standing violation: a policy fact, independent of mode and of any
-    # allocation. Emitted on every return path, including not-applicable ones.
+    # Standing violation: a policy fact, independent of mode and of any allocation.
+    # Emitted on every return path, including the not-applicable ones.
     standing = []
     if not allowed and agg_buyer_cost > 0:
         standing.append(("BUYER_COST_NOT_ALLOWED", "REQUIRES_APPROVAL",
@@ -92,8 +92,8 @@ def allocate(inp, ranks=None):
                 if allowed:
                     c_bc += bc
                 else:
-                    # G3: cap == 0 is unlimited. The buyer still owes the add-on,
-                    # but it is not overage against a cap that does not exist.
+                    # cap == 0 is unlimited: the buyer still owes the add-on, but it
+                    # is not overage against a cap that does not exist.
                     o_bc += bc
 
         excluded_cost = 0.0

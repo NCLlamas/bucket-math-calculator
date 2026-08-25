@@ -18,15 +18,10 @@
     {
       "code": "CAP",
       "status": "REQUIRES_USER_CHOICE",
-      "message": "Booking $88.03 Over Limit"
+      "message": "88.03 over limit"
     }
   ],
   "assert_skip": [
     "derived"
-  ],
-  "source": {
-    "itinerary_id": "06a6d78b-70c7-7cf1-8000-764339a074d3",
-    "prod_case": "checkout_08_long_haul_tier",
-    "note": "long_price_cap 1500 vs short_price_cap 750; the generic function does not own tier selection."
-  }
+  ]
 }

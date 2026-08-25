@@ -18,14 +18,10 @@
     {
       "code": "CLASS",
       "status": "REQUIRES_SPLIT_PAY",
-      "message": "Class Upgrade: $90.01 difference from in-policy fare"
+      "message": "90.01 difference from in-policy class"
     }
   ],
   "assert_skip": [
     "derived"
-  ],
-  "source": {
-    "itinerary_id": "06a73e55-5140-7dff-8000-8e01f8309d30",
-    "prod_case": "checkout_02_class_upgrade_split_pay"
-  }
+  ]
 }

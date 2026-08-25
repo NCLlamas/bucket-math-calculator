@@ -7,7 +7,7 @@
   },
   "buyers": [
     {
-      "id": "pax1",
+      "id": "b1",
       "not_included": false,
       "buyer_cost": 0.0
     }

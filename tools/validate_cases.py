@@ -145,8 +145,8 @@ def main():
         diffs = compare(exp, got)
         known = exp.get("divergence_from_spec")
         if diffs and known and not args.cmd:
-            # Running the spec reference against a production expectation that the
-            # spec provably cannot satisfy. Expected, not a regression.
+            # Running the spec reference against a fixed expectation the spec
+            # provably cannot satisfy. Expected, not a regression.
             xfailed += 1
             print(f"xfail {cid}  (known spec divergence)")
             for d in known:
@@ -161,7 +161,7 @@ def main():
 
     total = len(ids)
     print(f"\n{total - failed - errored - xfailed}/{total} passed"
-          + (f", {xfailed} xfail (production disagrees with the spec)" if xfailed else "")
+          + (f", {xfailed} xfail (fixed expectation disagrees with the spec)" if xfailed else "")
           + (f", {failed} failed" if failed else "")
           + (f", {errored} errored" if errored else ""))
     return 1 if (failed or errored) else 0

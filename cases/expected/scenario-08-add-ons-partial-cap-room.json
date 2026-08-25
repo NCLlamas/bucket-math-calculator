@@ -18,14 +18,10 @@
     {
       "code": "CAP",
       "status": "REQUIRES_USER_CHOICE",
-      "message": "Booking $172.40 Over Limit"
+      "message": "172.40 over limit"
     }
   ],
   "assert_skip": [
     "derived"
-  ],
-  "source": {
-    "itinerary_id": "06a73eea-9ec4-7db4-8000-fe50c0ee5831",
-    "prod_case": "checkout_09_paid_seats_allowed_partial_cap"
-  }
+  ]
 }

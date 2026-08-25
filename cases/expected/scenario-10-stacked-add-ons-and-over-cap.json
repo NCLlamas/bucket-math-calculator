@@ -18,19 +18,15 @@
     {
       "code": "BUYER_COST_NOT_ALLOWED",
       "status": "REQUIRES_APPROVAL",
-      "message": "Out of Policy: Paid Seats: ($22.56) Not Included in Policy"
+      "message": "22.56 add-on cost not allowed by policy"
     },
     {
       "code": "CAP",
       "status": "REQUIRES_USER_CHOICE",
-      "message": "Booking $139.94 Over Limit"
+      "message": "139.94 over limit"
     }
   ],
   "assert_skip": [
     "derived"
-  ],
-  "source": {
-    "itinerary_id": "06a73436-608b-786d-8000-74d4fbb7fa0a",
-    "prod_case": "checkout_11_stacked_seat_and_price_cap"
-  }
+  ]
 }

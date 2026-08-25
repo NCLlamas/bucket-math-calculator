@@ -1,0 +1,16 @@
+{
+  "applicable": false,
+  "allocation": null,
+  "derived": null,
+  "overage": 0.0,
+  "violations": [
+    {
+      "code": "CLASS",
+      "status": "REQUIRES_APPROVAL",
+      "message": "no in-policy benchmark available"
+    }
+  ],
+  "assert_skip": [
+    "derived"
+  ]
+}

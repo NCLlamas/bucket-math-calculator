@@ -23,10 +23,10 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 from case_table import CASES as SPEC_CASES        # noqa: E402
-from case_table_prod import CASES as PROD_CASES   # noqa: E402
+from case_table_scenarios import CASES as SCENARIO_CASES  # noqa: E402
 from reference_impl import allocate, CLASS_RANKS   # noqa: E402
 
-CASES = SPEC_CASES + PROD_CASES
+CASES = SPEC_CASES + SCENARIO_CASES
 
 CASES_DIR = os.path.join(ROOT, "cases")
 IN_DIR = os.path.join(CASES_DIR, "inputs")
@@ -67,40 +67,40 @@ def _dig(d, path):
     return d
 
 
-def divergence(prod, ref):
-    """Differences between the transcribed production output and the spec reference."""
+def divergence(fixed, ref):
+    """Differences between a fixed expected output and the spec reference."""
     diffs = []
 
-    if bool(prod["applicable"]) != bool(ref["applicable"]):
-        diffs.append(f"applicable: prod {prod['applicable']}, spec {ref['applicable']}")
+    if bool(fixed["applicable"]) != bool(ref["applicable"]):
+        diffs.append(f"applicable: fixture {fixed['applicable']}, spec {ref['applicable']}")
 
-    if abs(float(prod["overage"]) - float(ref["overage"])) > TOLERANCE:
-        diffs.append(f"overage: prod {float(prod['overage']):.2f}, "
+    if abs(float(fixed["overage"]) - float(ref["overage"])) > TOLERANCE:
+        diffs.append(f"overage: fixture {float(fixed['overage']):.2f}, "
                      f"spec {float(ref['overage']):.2f}")
 
-    if prod["allocation"] is None and ref["allocation"] is not None:
-        diffs.append("allocation: prod null (no split produced), spec produced buckets "
+    if fixed["allocation"] is None and ref["allocation"] is not None:
+        diffs.append("allocation: fixture null (no split), spec produced buckets "
                      f"covered.item={_dig(ref, ('allocation','covered','item'))} "
                      f"owed.item={_dig(ref, ('allocation','owed','item'))} "
                      f"owed.buyer_cost={_dig(ref, ('allocation','owed','buyer_cost'))}")
-    elif prod["allocation"] is not None and ref["allocation"] is None:
-        diffs.append("allocation: prod produced buckets, spec returned null")
-    elif prod["allocation"] is not None:
+    elif fixed["allocation"] is not None and ref["allocation"] is None:
+        diffs.append("allocation: fixture produced buckets, spec returned null")
+    elif fixed["allocation"] is not None:
         for path in MONEY_PATHS:
-            a, b = _dig(prod, path), _dig(ref, path)
+            a, b = _dig(fixed, path), _dig(ref, path)
             if a is None or b is None:
                 continue
             if abs(float(a) - float(b)) > TOLERANCE:
-                diffs.append(f"{'.'.join(path)}: prod {float(a):.2f}, spec {float(b):.2f}")
+                diffs.append(f"{'.'.join(path)}: fixture {float(a):.2f}, spec {float(b):.2f}")
 
-    p_v = {(v["code"], v["status"]) for v in prod["violations"]}
+    f_v = {(v["code"], v["status"]) for v in fixed["violations"]}
     r_v = {(v["code"], v["status"]) for v in ref["violations"]}
-    if p_v != r_v:
-        only_prod = sorted(p_v - r_v)
-        only_spec = sorted(r_v - p_v)
+    if f_v != r_v:
+        only_fixture = sorted(f_v - r_v)
+        only_spec = sorted(r_v - f_v)
         parts = []
-        if only_prod:
-            parts.append(f"prod-only {only_prod}")
+        if only_fixture:
+            parts.append(f"fixture-only {only_fixture}")
         if only_spec:
             parts.append(f"spec-only {only_spec}")
         diffs.append("violations: " + "; ".join(parts))
@@ -131,7 +131,7 @@ def main():
             expected = reference
             diffs = []
         else:
-            # Production output is authoritative; record how the spec differs.
+            # The fixed expected output is authoritative; record how the spec differs.
             expected = dict(override)
             diffs = divergence(expected, reference)
             if diffs:
@@ -162,7 +162,7 @@ def main():
             "expected": f"expected/{cid}.json",
             "applicable": expected["applicable"],
             "violation_codes": [v["code"] for v in expected["violations"]],
-            "expected_from": "production (ENG-1035)" if override else "spec reference",
+            "expected_from": "fixed" if override else "derived",
             "diverges_from_spec": bool(diffs),
         })
         if diffs:
@@ -208,7 +208,7 @@ def main():
 
     print(f"wrote {len(manifest_cases)} cases -> cases/inputs/, cases/expected/")
     if divergences:
-        print(f"{len(divergences)} case(s) where production disagrees with the spec:")
+        print(f"{len(divergences)} case(s) where a fixed expectation disagrees with the spec:")
         for cid, ds in divergences.items():
             print(f"  {cid}")
             for d in ds:

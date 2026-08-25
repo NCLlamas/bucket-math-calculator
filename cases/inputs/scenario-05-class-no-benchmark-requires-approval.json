@@ -1,30 +1,35 @@
 {
-  "mode": "CAP",
+  "mode": "CLASS",
   "item": {
-    "total": 1180.8,
-    "item_cost": 1180.8,
+    "total": 451.76,
+    "item_cost": 451.76,
     "buyer_cost": 0.0
   },
   "buyers": [
     {
-      "id": "pax1",
+      "id": "b1",
       "not_included": false,
-      "buyer_cost": 0.0
-    },
-    {
-      "id": "pax2",
-      "not_included": true,
       "buyer_cost": 0.0
     }
   ],
   "policy": {
-    "cap": 600.0,
+    "cap": 0.0,
     "are_buyer_costs_allowed": false,
     "buyer_not_included_fee": 35.0,
     "included_buyer_count": 1,
     "allowed_classes": [
+      "BASIC",
       "ECONOMY"
     ]
   },
-  "fee_rate": 0.04
+  "fee_rate": 0.04,
+  "upgrade_context": {
+    "selected_class": "FIRST",
+    "alternate_classes": [
+      {
+        "class": "FIRST",
+        "cost": 2654.51
+      }
+    ]
+  }
 }
