@@ -1,0 +1,7 @@
+{
+  "raises": true,
+  "failures": [
+    "C2"
+  ],
+  "note": "Inert while add-ons are allowed (basis reads `total`), but the same payload with are_buyer_costs_allowed=false doubled the buyer's overage from 100 to 200. Severity depended on an unrelated policy flag."
+}

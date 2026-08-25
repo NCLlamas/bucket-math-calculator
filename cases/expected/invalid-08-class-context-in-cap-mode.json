@@ -1,0 +1,7 @@
+{
+  "raises": true,
+  "failures": [
+    "C6"
+  ],
+  "note": "None. Returned the correct allocation and ignored the context. Included because the spec enforces uniformly rather than by severity."
+}

@@ -1,0 +1,7 @@
+{
+  "raises": true,
+  "failures": [
+    "C3"
+  ],
+  "note": "Returned cov(740,160) owed(0,40): buckets summed to 940 against a total of 1000. Sixty units of the input vanished while every field looked plausible."
+}

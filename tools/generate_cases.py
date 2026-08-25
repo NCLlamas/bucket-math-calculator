@@ -24,9 +24,10 @@ sys.path.insert(0, HERE)
 
 from case_table import CASES as SPEC_CASES        # noqa: E402
 from case_table_scenarios import CASES as SCENARIO_CASES  # noqa: E402
-from reference_impl import allocate, CLASS_RANKS   # noqa: E402
+from case_table_invalid import CASES as INVALID_CASES     # noqa: E402
+from reference_impl import allocate, InvalidInput, CLASS_RANKS  # noqa: E402
 
-CASES = SPEC_CASES + SCENARIO_CASES
+CASES = SPEC_CASES + SCENARIO_CASES + INVALID_CASES
 
 CASES_DIR = os.path.join(ROOT, "cases")
 IN_DIR = os.path.join(CASES_DIR, "inputs")
@@ -124,6 +125,35 @@ def main():
         seen.add(cid)
 
         inp = case["input"]
+
+        if case.get("expects_raise"):
+            try:
+                allocate(inp)
+            except InvalidInput as exc:
+                actual = exc.constraints
+            else:
+                raise SystemExit(f"{cid}: expected a raise, but validation passed")
+            declared = sorted(case["expects_raise"])
+            if actual != declared:
+                raise SystemExit(f"{cid}: declared {declared}, reference raised {actual}")
+            expected = {
+                "raises": True,
+                "failures": actual,
+                "note": case.get("silent_damage"),
+            }
+            with open(os.path.join(IN_DIR, f"{cid}.json"), "w") as fh:
+                json.dump(inp, fh, indent=2); fh.write("\n")
+            with open(os.path.join(EXP_DIR, f"{cid}.json"), "w") as fh:
+                json.dump(expected, fh, indent=2); fh.write("\n")
+            common = {"id": cid, "mode": inp.get("mode"), "description": case["desc"],
+                      "provenance": case["provenance"], "tags": case["tags"]}
+            input_index.append({**common, "input": f"inputs/{cid}.json"})
+            manifest_cases.append({**common, "input": f"inputs/{cid}.json",
+                                   "expected": f"expected/{cid}.json",
+                                   "expected_from": "constraint",
+                                   "raises": True, "failures": actual})
+            continue
+
         reference = to_expected(allocate(inp))
 
         override = case.get("expected_override")
@@ -168,6 +198,25 @@ def main():
         if diffs:
             divergences[cid] = diffs
 
+    # Spec R1: every Class in a case must be rankable, and a deployment configures
+    # ONE class set. The two sets here are disjoint and no case may mix them.
+    tier = {k for k in CLASS_RANKS if k.startswith("TIER_")}
+    ladder = set(CLASS_RANKS) - tier
+    for case in CASES:
+        if case.get("expects_raise"):
+            continue
+        inp = case["input"]
+        used = set(inp["policy"]["allowed_classes"])
+        ctx = inp.get("upgrade_context")
+        if ctx:
+            used.add(ctx["selected_class"])
+            used |= {o["class"] for o in ctx["alternate_classes"]}
+        unknown = used - set(CLASS_RANKS)
+        if unknown:
+            raise SystemExit(f"{case['id']}: unrankable class(es) {sorted(unknown)} (C7/R1)")
+        if used & tier and used & ladder:
+            raise SystemExit(f"{case['id']}: mixes two class sets {sorted(used)}")
+
     # Remove fixtures for cases that no longer exist in the tables.
     for d in (IN_DIR, EXP_DIR):
         for path in glob.glob(os.path.join(d, "*.json")):
@@ -192,6 +241,9 @@ def main():
             "spec": "bucket-calculations-spec.md",
             "join_key": "filename stem == case id",
             "money_tolerance": TOLERANCE,
+            "invalid_case_note": "Cases whose expected output has `raises: true` must "
+                                 "fail validation. Compare the SET of `failures` "
+                                 "constraint ids; messages are informational.",
             "class_ranks": CLASS_RANKS,
             "divergences_from_spec": divergences,
             "comparison_notes": [

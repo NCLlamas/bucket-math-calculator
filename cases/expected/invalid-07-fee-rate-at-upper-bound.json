@@ -1,0 +1,7 @@
+{
+  "raises": true,
+  "failures": [
+    "C5"
+  ],
+  "note": "Doubled owed.total."
+}

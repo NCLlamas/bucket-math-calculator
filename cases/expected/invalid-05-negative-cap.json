@@ -1,0 +1,7 @@
+{
+  "raises": true,
+  "failures": [
+    "C4"
+  ],
+  "note": "Returned applicable=false: the most restrictive input conceivable silently produced the most permissive behaviour."
+}

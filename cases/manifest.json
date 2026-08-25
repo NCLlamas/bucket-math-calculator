@@ -3,6 +3,7 @@
   "spec": "bucket-calculations-spec.md",
   "join_key": "filename stem == case id",
   "money_tolerance": 0.01,
+  "invalid_case_note": "Cases whose expected output has `raises: true` must fail validation. Compare the SET of `failures` constraint ids; messages are informational.",
   "class_ranks": {
     "TIER_1": 1,
     "TIER_2": 2,
@@ -20,7 +21,7 @@
     "Compare all Money fields with the tolerance above, not exact equality.",
     "`reconciliation` is a diagnostic block, not part of the output contract. See README Findings F1."
   ],
-  "count": 36,
+  "count": 47,
   "cases": [
     {
       "id": "cap-01-within-cap-not-applicable",
@@ -746,6 +747,224 @@
       ],
       "expected_from": "fixed",
       "diverges_from_spec": false
+    },
+    {
+      "id": "invalid-01-no-buyers",
+      "mode": "CAP",
+      "description": "C1: empty buyers list. N == 0 makes the per-buyer derivation undefined. Also trips C3, since an empty sum cannot match a non-zero aggregate.",
+      "provenance": "spec:C1",
+      "tags": [
+        "invalid",
+        "C1",
+        "C3",
+        "structural",
+        "multi-failure"
+      ],
+      "input": "inputs/invalid-01-no-buyers.json",
+      "expected": "expected/invalid-01-no-buyers.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C1",
+        "C3"
+      ]
+    },
+    {
+      "id": "invalid-02-negative-total",
+      "mode": "CAP",
+      "description": "C1: negative `total`. Also trips C2, because a positive item_cost now exceeds it.",
+      "provenance": "spec:C1",
+      "tags": [
+        "invalid",
+        "C1",
+        "C2",
+        "silent",
+        "multi-failure",
+        "core"
+      ],
+      "input": "inputs/invalid-02-negative-total.json",
+      "expected": "expected/invalid-02-negative-total.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C1",
+        "C2"
+      ]
+    },
+    {
+      "id": "invalid-03-item-cost-exceeds-total",
+      "mode": "CAP",
+      "description": "C2: item_cost 1400 against a total of 1000.",
+      "provenance": "spec:C2",
+      "tags": [
+        "invalid",
+        "C2",
+        "silent",
+        "core"
+      ],
+      "input": "inputs/invalid-03-item-cost-exceeds-total.json",
+      "expected": "expected/invalid-03-item-cost-exceeds-total.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C2"
+      ]
+    },
+    {
+      "id": "invalid-04-add-on-aggregate-mismatch",
+      "mode": "CAP",
+      "description": "C3: item.buyer_cost says 260 while the per-buyer costs sum to 200.",
+      "provenance": "spec:C3",
+      "tags": [
+        "invalid",
+        "C3",
+        "silent",
+        "core"
+      ],
+      "input": "inputs/invalid-04-add-on-aggregate-mismatch.json",
+      "expected": "expected/invalid-04-add-on-aggregate-mismatch.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C3"
+      ]
+    },
+    {
+      "id": "invalid-05-negative-cap",
+      "mode": "CAP",
+      "description": "C4: negative cap. The sentinel test is `cap > 0`, so anything below zero falls into the unlimited branch.",
+      "provenance": "spec:C4",
+      "tags": [
+        "invalid",
+        "C4",
+        "silent",
+        "core"
+      ],
+      "input": "inputs/invalid-05-negative-cap.json",
+      "expected": "expected/invalid-05-negative-cap.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C4"
+      ]
+    },
+    {
+      "id": "invalid-06-fee-rate-as-percent",
+      "mode": "CAP",
+      "description": "C5: fee_rate given as 4 rather than 0.04 \u2014 the everyday percent-versus-fraction slip.",
+      "provenance": "spec:C5",
+      "tags": [
+        "invalid",
+        "C5",
+        "silent",
+        "core"
+      ],
+      "input": "inputs/invalid-06-fee-rate-as-percent.json",
+      "expected": "expected/invalid-06-fee-rate-as-percent.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C5"
+      ]
+    },
+    {
+      "id": "invalid-07-fee-rate-at-upper-bound",
+      "mode": "CAP",
+      "description": "C5 boundary: fee_rate exactly 1.0. Rate is compared strictly, so the half-open interval [0, 1) excludes it.",
+      "provenance": "spec:C5 boundary",
+      "tags": [
+        "invalid",
+        "C5",
+        "boundary",
+        "rate-is-strict"
+      ],
+      "input": "inputs/invalid-07-fee-rate-at-upper-bound.json",
+      "expected": "expected/invalid-07-fee-rate-at-upper-bound.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C5"
+      ]
+    },
+    {
+      "id": "invalid-08-class-context-in-cap-mode",
+      "mode": "CAP",
+      "description": "C6: mode is CAP but an upgrade_context is supplied. Harmless to the arithmetic \u2014 the context is never read \u2014 but C6 is an `iff`.",
+      "provenance": "spec:C6",
+      "tags": [
+        "invalid",
+        "C6",
+        "inert"
+      ],
+      "input": "inputs/invalid-08-class-context-in-cap-mode.json",
+      "expected": "expected/invalid-08-class-context-in-cap-mode.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C6"
+      ]
+    },
+    {
+      "id": "invalid-09-class-mode-without-context",
+      "mode": "CLASS",
+      "description": "C6 in the other direction: mode is CLASS with no upgrade_context.",
+      "provenance": "spec:C6",
+      "tags": [
+        "invalid",
+        "C6",
+        "structural"
+      ],
+      "input": "inputs/invalid-09-class-mode-without-context.json",
+      "expected": "expected/invalid-09-class-mode-without-context.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C6"
+      ]
+    },
+    {
+      "id": "invalid-10-negative-buyer-cost",
+      "mode": "CAP",
+      "description": "C1: a buyer carries a negative add-on cost. Also trips C3 \u2014 the per-buyer costs no longer sum to the aggregate.",
+      "provenance": "spec:C1",
+      "tags": [
+        "invalid",
+        "C1",
+        "C3",
+        "multi-failure"
+      ],
+      "input": "inputs/invalid-10-negative-buyer-cost.json",
+      "expected": "expected/invalid-10-negative-buyer-cost.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C1",
+        "C3"
+      ]
+    },
+    {
+      "id": "invalid-11-stacked-failures",
+      "mode": "CAP",
+      "description": "Three independent clauses at once. Validation must report all three, not stop at the first.",
+      "provenance": "spec:C2 + C4 + C5",
+      "tags": [
+        "invalid",
+        "C2",
+        "C4",
+        "C5",
+        "multi-failure",
+        "granularity",
+        "core"
+      ],
+      "input": "inputs/invalid-11-stacked-failures.json",
+      "expected": "expected/invalid-11-stacked-failures.json",
+      "expected_from": "constraint",
+      "raises": true,
+      "failures": [
+        "C2",
+        "C4",
+        "C5"
+      ]
     }
   ]
 }

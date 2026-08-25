@@ -23,10 +23,13 @@ import json
 import os
 import subprocess
 import sys
+from types import SimpleNamespace
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
+
+from reference_impl import InvalidInput   # noqa: E402
 
 CASES = os.path.join(ROOT, "cases")
 TOL = 0.01
@@ -49,6 +52,19 @@ def dig(d, path):
             return None
         d = d[k]
     return d
+
+
+def compare_raise(exp, raised):
+    """Grade a case that must fail validation."""
+    want = sorted(exp["failures"])
+    if raised is None:
+        return [f"expected a rejection ({', '.join(want)}), got a normal result"]
+    got = sorted(raised.constraints)
+    if not got:
+        return []          # rejected, but did not name the constraints — accepted
+    if got != want:
+        return [f"constraints: expected {want}, got {got}"]
+    return []
 
 
 def compare(exp, got):
@@ -100,11 +116,29 @@ def compare(exp, got):
     return diffs
 
 
+class Raised(Exception):
+    """The calculator rejected the input. `constraints` is [] if it did not say which."""
+
+    def __init__(self, constraints):
+        self.constraints = constraints
+
+
 def run_external(cmd, payload):
     proc = subprocess.run(cmd, shell=True, input=json.dumps(payload),
                           capture_output=True, text=True)
     if proc.returncode != 0:
-        raise RuntimeError(f"exit {proc.returncode}: {proc.stderr.strip()[:400]}")
+        # Non-zero exit means the calculator rejected the input. If it emitted a
+        # failure list on either stream, use it; otherwise record the bare rejection.
+        ids = []
+        for stream in (proc.stdout, proc.stderr):
+            try:
+                ids = sorted({f["constraint"] if isinstance(f, dict) else f
+                              for f in json.loads(stream).get("failures", [])})
+            except Exception:
+                continue
+            if ids:
+                break
+        raise Raised(ids)
     return json.loads(proc.stdout)
 
 
@@ -128,6 +162,7 @@ def main():
         with open(os.path.join(CASES, "expected", f"{cid}.json")) as fh:
             exp = json.load(fh)
 
+        raised = None
         try:
             if args.cmd:
                 got = run_external(args.cmd, payload)
@@ -137,9 +172,30 @@ def main():
                 r["violations"] = [{"code": c, "status": s, "message": m}
                                    for c, s, m in r["violations"]]
                 got = r
+        except Raised as exc:
+            got, raised = None, exc
+        except InvalidInput as exc:
+            got, raised = None, SimpleNamespace(constraints=exc.constraints)
         except Exception as exc:
             print(f"ERROR {cid}\n       {exc}")
             errored += 1
+            continue
+
+        if exp.get("raises"):
+            diffs = compare_raise(exp, raised)
+            if diffs:
+                failed += 1
+                print(f"FAIL  {cid}")
+                for d in diffs:
+                    print(f"       {d}")
+            else:
+                print(f"ok    {cid}  (rejected: {', '.join(exp['failures'])})")
+            continue
+
+        if raised is not None:
+            failed += 1
+            print(f"FAIL  {cid}\n       unexpected rejection "
+                  f"({', '.join(raised.constraints) or 'no constraints named'})")
             continue
 
         diffs = compare(exp, got)

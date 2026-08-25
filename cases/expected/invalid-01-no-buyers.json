@@ -1,0 +1,8 @@
+{
+  "raises": true,
+  "failures": [
+    "C1",
+    "C3"
+  ],
+  "note": "Previously crashed with a bare ZeroDivisionError \u2014 a language fault rather than a domain error."
+}

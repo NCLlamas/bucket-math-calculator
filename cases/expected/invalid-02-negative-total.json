@@ -1,0 +1,8 @@
+{
+  "raises": true,
+  "failures": [
+    "C1",
+    "C2"
+  ],
+  "note": "Returned applicable=false, allocation=null \u2014 indistinguishable from a clean in-policy pass."
+}

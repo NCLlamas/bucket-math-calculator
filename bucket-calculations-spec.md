@@ -22,7 +22,7 @@ always reconcile back to the input. No I/O, no persistence, no external calls.
 | **total** | `item_cost` + all add-ons (buyer_costs + any other ancillary). `total ≥ item_cost`, `total ≥ Σ buyer_cost`. |
 | **buyer** | One individual in the group. Every buyer is either *included* or *not included* by the policy. |
 | **cap** | Per-buyer spend ceiling the policy funds. `0` is the sentinel for "no cap" — the cap is treated as **infinite** (any spend is allowed / in-policy). |
-| **class** | A discrete tier of the item (e.g. a quality/service level). Classes are **ranked**; higher rank = higher tier. |
+| **class** | A discrete tier of the item (e.g. a quality/service level). Classes are **ranked**; higher rank = higher tier. The set and its order are caller-supplied, not fixed by this spec. |
 | **covered** | Output bucket: money the policy funds. |
 | **owed** | Output bucket: money the buyer funds. |
 
@@ -35,7 +35,7 @@ always reconcile back to the input. No I/O, no persistence, no external calls.
 | `Money` | Non-negative fixed-point decimal (2 dp). *(Current implementation uses float; a Decimal with explicit remainder handling is the hardening target.)* |
 | `Rate` | Decimal in `[0, 1)`. |
 | `Id` | Opaque identifier. |
-| `Class` | Member of a ranked, finite set. |
+| `Class` | Member of a ranked, finite set supplied by the caller. See [Class ranking](#class-ranking-external--supplied-by-the-caller). |
 
 ---
 
@@ -76,17 +76,89 @@ BucketCalculationInput
 |---|-----------|
 | C1 | All `Money` ≥ 0; all counts ≥ 0; `len(buyers) ≥ 1`. |
 | C2 | `item_cost ≤ total` and `buyer_cost ≤ total`. |
-| C3 | `Σ buyer.buyer_cost == item.buyer_cost` (± 0.01). |
+| C3 | `Σ buyer.buyer_cost == item.buyer_cost`. |
 | C4 | `cap ≥ 0`; `cap == 0` means "no cap" (treated as infinite — any spend is in-policy). |
 | C4b | `allowed_classes` empty means "all classes allowed". |
 | C5 | `0 ≤ fee_rate < 1`. |
 | C6 | `upgrade_context` present **iff** `mode == "CLASS"`. |
-| C7 | Every `alternate_classes[*].class` is rankable against `selected_class`. |
+| C7 | Every `alternate_classes[*].class`, `selected_class`, and member of `allowed_classes` is drawn from the configured class set and is therefore rankable (see [Class ranking](#class-ranking-external--supplied-by-the-caller)). |
+
+`C4b` is a definition rather than a testable condition; every other clause is checked.
+
+### Money tolerance
+
+Every `Money` comparison — in the constraints above, in the output invariants, and
+in reconciliation — uses an absolute tolerance of **±0.01**, one minor unit. `Money`
+values normally arrive as sums of upstream components and carry accumulated
+floating-point artifacts, so exact comparison produces spurious failures: an
+`item_cost` of `800.0000000001` is not a violation of C2.
+
+`Rate` is compared **exactly**. `fee_rate` is a configured constant with no
+accumulation path, so `0 ≤ fee_rate < 1` is strict — `1.0` fails, `0.9999` passes.
+
+Counts (`included_buyer_count`, `len(buyers)`) are integers and are compared exactly.
+
+### Validation
+
+The constraints are **enforced, not assumed.** Before any allocation work begins,
+every checkable clause is evaluated. If any fails, the calculation **raises** and
+returns no allocation.
+
+```
+InvalidInput
+└── failures: [ ConstraintFailure { constraint: "C1".."C7", message: string } ]
+```
+
+| Rule | |
+|------|--|
+| **Mechanism** | Raise. Not a return value — `applicable: false` already means *"valid input, nothing to split"*, and the `violations` list carries end-user policy outcomes. Neither channel can express "the caller sent something malformed" without becoming ambiguous. |
+| **Timing** | Up front, before any bucket is computed. A partially-computed allocation is never returned or observable. |
+| **Granularity** | **All** failing clauses in one raise, not the first. A caller repairing a payload should see the whole list. |
+| **Scope** | Uniform across every checkable clause. Severity is not a property of the clause — a bad `item_cost` is inert when `are_buyer_costs_allowed` is true and doubles the buyer's charge when it is false — so no clause can be safely exempted. |
+| **Message** | Informational. `constraint` is the contract; wording is not specified. |
+
+Validation failure is distinct from every success-shaped output. In particular it is
+**not** `applicable: false`: a negative `total` and a negative `cap` both otherwise
+sail through the algorithm and return `applicable: false, allocation: null`, which is
+indistinguishable from a clean in-policy pass.
 
 ### Preconditions (external — outside this function)
 
 - The feature is only invoked when bucketing is enabled for the context
   (e.g. the account is eligible). This function assumes it should run.
+
+### Class ranking (external — supplied by the caller)
+
+`CLASS` mode compares tiers, so it needs an ordering over `Class`. **This spec fixes
+no class names and no ordering.** The class set is a property of the deployment — its
+tiers, its vocabulary — so it is *configuration*, supplied once when the calculation
+is constructed, not data passed per call.
+
+An implementation must therefore be given:
+
+```
+rank(class) -> integer      # or any equivalent total ordering over the class set
+```
+
+Required properties:
+
+| # | Property |
+|---|----------|
+| R1 | **Total over the configured set.** `rank()` is defined for every member of that set, and comparing two members never returns "unknown". |
+| R2 | **Higher rank = higher tier.** `rank(a) < rank(b)` means `a` is the lower tier. |
+| R3 | **Only the relative order is meaningful.** Absolute values carry no information; any order-preserving relabelling is equivalent. Ranks are never compared to `Money`, summed, or used in arithmetic. |
+| R4 | **Stable within a calculation.** `rank()` returns the same answer for the same class throughout a single call. |
+| R5 | **Ranks attach to class values, not to options.** Several `alternate_classes` entries may share a class — including the selected one. That is legal and is exactly why the tiebreak in Mode B is *"highest rank, then highest cost"*. |
+
+Because `rank()` is a lookup, `Class` values must be comparable by equality: one
+canonical spelling per tier, used consistently across `selected_class`,
+`alternate_classes[*].class`, and `allowed_classes`. The caller chooses the form.
+
+> **Worked example.** A deployment with four tiers might configure
+> `{BRONZE: 1, SILVER: 2, GOLD: 3, PLATINUM: 4}`. `{BRONZE: 10, SILVER: 20, GOLD: 30,
+> PLATINUM: 40}` is the same configuration by R3. A `selected_class` of `GOLD` makes
+> `BRONZE`, `SILVER` and `GOLD` options eligible benchmarks and excludes `PLATINUM`,
+> subject to the other two clauses of `eligible()`.
 
 ---
 

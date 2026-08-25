@@ -1,0 +1,8 @@
+{
+  "raises": true,
+  "failures": [
+    "C1",
+    "C3"
+  ],
+  "note": "Produced a negative owed.buyer_cost, violating O2."
+}

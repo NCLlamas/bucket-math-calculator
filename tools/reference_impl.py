@@ -17,6 +17,104 @@ CLASS_RANKS = {
 }
 
 
+EPSILON = 0.01   # spec §1 Money tolerance: one minor unit
+
+
+class InvalidInput(Exception):
+    """Raised when one or more input constraints fail. Carries every failure."""
+
+    def __init__(self, failures):
+        self.failures = failures                      # [(constraint, message)]
+        ids = ", ".join(sorted({c for c, _ in failures}))
+        super().__init__(f"{len(failures)} constraint failure(s): {ids}")
+
+    @property
+    def constraints(self):
+        return sorted({c for c, _ in self.failures})
+
+
+def validate(inp, ranks=None):
+    """Evaluate every checkable clause of C1-C7. Raise with ALL failures, or return.
+
+    Money comparisons carry the +/-0.01 tolerance; Rate is strict; counts are exact.
+    """
+    ranks = ranks or CLASS_RANKS
+    f = []
+
+    def money_ok(v):
+        return isinstance(v, (int, float)) and float(v) >= -EPSILON
+
+    item = inp["item"]
+    buyers = inp["buyers"]
+    policy = inp["policy"]
+    total = float(item["total"])
+    item_cost = float(item["item_cost"])
+    agg_bc = float(item["buyer_cost"])
+
+    # --- C1: non-negative money and counts, at least one buyer
+    for label, v in (("item.total", total), ("item.item_cost", item_cost),
+                     ("item.buyer_cost", agg_bc),
+                     ("policy.buyer_not_included_fee", float(policy["buyer_not_included_fee"]))):
+        if not money_ok(v):
+            f.append(("C1", f"{label} must be >= 0, got {v}"))
+    for b in buyers:
+        if not money_ok(float(b["buyer_cost"])):
+            f.append(("C1", f"buyer {b['id']}.buyer_cost must be >= 0, got {b['buyer_cost']}"))
+    if int(policy["included_buyer_count"]) < 0:
+        f.append(("C1", f"policy.included_buyer_count must be >= 0, "
+                        f"got {policy['included_buyer_count']}"))
+    if len(buyers) < 1:
+        f.append(("C1", "buyers must contain at least one entry"))
+
+    # --- C2: components cannot exceed the total
+    if item_cost > total + EPSILON:
+        f.append(("C2", f"item_cost {item_cost} exceeds total {total}"))
+    if agg_bc > total + EPSILON:
+        f.append(("C2", f"item.buyer_cost {agg_bc} exceeds total {total}"))
+
+    # --- C3: per-buyer add-ons must sum to the aggregate
+    summed = sum(float(b["buyer_cost"]) for b in buyers)
+    if abs(summed - agg_bc) > EPSILON:
+        f.append(("C3", f"sum of buyer.buyer_cost {summed} != item.buyer_cost {agg_bc}"))
+
+    # --- C4: cap non-negative (0 is the unlimited sentinel)
+    cap = float(policy["cap"])
+    if not money_ok(cap):
+        f.append(("C4", f"policy.cap must be >= 0, got {cap}"))
+
+    # --- C5: Rate strictly in [0, 1)
+    rate = float(inp["fee_rate"])
+    if not (0 <= rate < 1):
+        f.append(("C5", f"fee_rate must satisfy 0 <= rate < 1, got {rate}"))
+
+    # --- C6: upgrade_context present iff CLASS
+    mode = inp.get("mode")
+    if mode not in ("CAP", "CLASS"):
+        f.append(("C6", f"mode must be CAP or CLASS, got {mode!r}"))
+    else:
+        has_ctx = "upgrade_context" in inp and inp["upgrade_context"] is not None
+        if mode == "CLASS" and not has_ctx:
+            f.append(("C6", "mode is CLASS but upgrade_context is absent"))
+        if mode == "CAP" and has_ctx:
+            f.append(("C6", "mode is CAP but upgrade_context is present"))
+
+    # --- C7: every class reference is drawn from the configured set
+    referenced = list(policy["allowed_classes"])
+    ctx = inp.get("upgrade_context")
+    if ctx:
+        referenced.append(ctx["selected_class"])
+        referenced += [o["class"] for o in ctx["alternate_classes"]]
+        for o in ctx["alternate_classes"]:
+            if not money_ok(float(o["cost"])):
+                f.append(("C1", f"alternate_classes cost must be >= 0, got {o['cost']}"))
+    for c in referenced:
+        if c not in ranks:
+            f.append(("C7", f"class {c!r} is not in the configured class set"))
+
+    if f:
+        raise InvalidInput(f)
+
+
 def _m(x):
     """Normalise a money value to 2dp, killing float artifacts and -0.0."""
     v = round(float(x) + 0.0, 2)
@@ -29,6 +127,7 @@ def _rank(cls, ranks):
 
 def allocate(inp, ranks=None):
     ranks = ranks or CLASS_RANKS
+    validate(inp, ranks)
 
     mode = inp["mode"]
     item = inp["item"]

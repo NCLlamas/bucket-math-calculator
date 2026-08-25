@@ -1,0 +1,7 @@
+{
+  "raises": true,
+  "failures": [
+    "C6"
+  ],
+  "note": "Previously crashed with a bare KeyError."
+}

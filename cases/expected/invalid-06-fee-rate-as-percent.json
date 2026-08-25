@@ -1,0 +1,7 @@
+{
+  "raises": true,
+  "failures": [
+    "C5"
+  ],
+  "note": "Every bucket stayed correct while owed.total went from 104.00 to 500.00. The buyer is charged five times over and nothing in the allocation looks wrong."
+}

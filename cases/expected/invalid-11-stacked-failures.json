@@ -1,0 +1,9 @@
+{
+  "raises": true,
+  "failures": [
+    "C2",
+    "C4",
+    "C5"
+  ],
+  "note": "Compounded: an inflated basis, an unlimited cap, and a doubled fee, each masking the others."
+}
